@@ -27,6 +27,16 @@ class AccountAdministrationTest {
         UUID id=UUID.fromString(json.readTree(result.getResponse().getContentAsString()).get("id").asText());
         mvc.perform(post("/api/accounts").with(user("owner")).with(csrf()).header("Idempotency-Key",operation).contentType("application/json").content(body)).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id.toString()));return new Created(id,name);
     }
+    @Test void eightCharacterPasswordsWorkForBothRegistrationAndStaff()throws Exception{
+        for(String value:List.of("Abcdef1!","abcdef1!","ABCDEF1!","Abcdefg!","Abcdef12")){
+            boolean valid=value.equals("Abcdef1!");String username="pw_"+key().substring(0,8);
+            String body=json.writeValueAsString(Map.of("username",username,"password",value,"name","JUNIT password","phone","0901234567","address","JUNIT address"));
+            mvc.perform(post("/api/auth/register").with(csrf()).contentType("application/json").content(body)).andExpect(status().is(valid?200:400));
+            String staff=json.writeValueAsString(Map.of("username",username+"_staff","password",value,"displayName","JUNIT password","role","HR"));
+            mvc.perform(post("/api/accounts").with(user("owner")).with(csrf()).header("Idempotency-Key",key()).contentType("application/json").content(staff)).andExpect(status().is(valid?200:400));
+            if(valid)assertThat(encoder.matches(value,db.queryForObject("select password_hash from user_account where username=?",String.class,username))).isTrue();
+        }
+    }
     @Test void ownerCreatesHashedStaffOnceAndNoPasswordAppearsInAuditOrApi()throws Exception{
         var c=create("INVENTORY");String hash=db.queryForObject("select password_hash from user_account where id=?",String.class,c.id());assertThat(encoder.matches("JunitOnly!Password123",hash)).isTrue();assertThat(hash).startsWith("$2");
         assertThat(db.queryForObject("select count(*) from user_account where username=?",Integer.class,c.username())).isEqualTo(1);

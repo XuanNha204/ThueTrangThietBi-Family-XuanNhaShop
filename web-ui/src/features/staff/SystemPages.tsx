@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { passwordHint, passwordPattern } from '../../shared/password';
 import type { ReactNode } from 'react';
 import { Download, FileBarChart, LockKeyhole, ShieldCheck, Plus } from 'lucide-react';
 import type { Row, User } from '../../shared/types';
@@ -213,13 +214,13 @@ export function Settings() {
     setModal(
       <FormDialog
         title="Tạo tài khoản nhân viên"
-        description="Tài khoản riêng cho vận hành, không đổi tài khoản khách thành nhân viên. Mật khẩu cần ít nhất 12 ký tự, tối đa 72 byte UTF-8."
+        description="Tài khoản riêng cho vận hành, không đổi tài khoản khách thành nhân viên."
         submitLabel="Tạo tài khoản"
         onClose={() => setModal(null)}
         fields={[
           { key: 'username', label: 'Tên đăng nhập' },
           { key: 'displayName', label: 'Họ tên nhân viên' },
-          { key: 'password', label: 'Mật khẩu', type: 'password' },
+          { key: 'password', label: 'Mật khẩu', type: 'password', minLength: 8, maxLength: 72, pattern: passwordPattern, help: passwordHint },
           { key: 'role', label: 'Vai trò', options: staffRoles },
         ]}
         onSubmit={async (v) => (await cmd.run('/accounts', v, 'Đã tạo tài khoản nhân viên.')).ok}

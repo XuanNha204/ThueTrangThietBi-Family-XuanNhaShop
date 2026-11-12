@@ -9,6 +9,7 @@ import { request, clearCsrf, roles } from '../../shared/api';
 import { useApp } from '../../shared/state';
 import type { User } from '../../shared/types';
 import { staffNavigation } from '../staff/Shell';
+import { passwordHint, passwordPattern } from '../../shared/password';
 export function Login() {
   const { setUser } = useApp();
   const navigate = useNavigate(),
@@ -139,7 +140,9 @@ export function Login() {
                   type={show ? 'text' : 'password'}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   required
-                  minLength={mode === 'register' ? 12 : 1}
+                  minLength={mode === 'register' ? 8 : 1}
+                  pattern={mode === 'register' ? passwordPattern : undefined}
+                  title={mode === 'register' ? passwordHint : undefined}
                   maxLength={72}
                 />
                 <button
@@ -152,7 +155,7 @@ export function Login() {
               </div>
               {mode === 'register' && (
                 <small>
-                  Tối thiểu 12 ký tự. Tên đăng nhập dùng chữ thường, số, dấu chấm, gạch dưới hoặc
+                  {passwordHint} Tên đăng nhập dùng chữ thường, số, dấu chấm, gạch dưới hoặc
                   gạch ngang.
                 </small>
               )}

@@ -1,6 +1,5 @@
 package vn.xuannhashop.business.identity.application;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +15,7 @@ public class AccountAdministrationService implements AccountAdministrationApplic
     public AccountAdministrationService(IdentityRepository r,PasswordHashing hashing,ActorContext actor,Commands commands,ActivityService audit){this.r=r;this.hashing=hashing;this.actor=actor;this.commands=commands;this.audit=audit;}
     @Transactional public UUID createStaff(CreateStaff c,String key){
         actor.require("OWNER");if(c==null||c.username()==null||!c.username().matches("[a-z0-9_.-]{4,60}"))throw DomainException.bad("Tên đăng nhập gồm 4–60 ký tự thường, số, chấm, gạch dưới hoặc gạch ngang.");
-        if(c.password()==null||c.password().length()<12||c.password().getBytes(StandardCharsets.UTF_8).length>72)throw DomainException.bad("Mật khẩu cần ít nhất 12 ký tự và tối đa 72 byte UTF-8.");
+        PasswordPolicy.validate(c.password());
         String name=Checks.text(c.displayName(),120,"Họ tên");if(c.role()==null||!STAFF_ROLES.contains(c.role()))throw DomainException.bad("Chọn vai trò nhân viên hợp lệ.");
         // Password is used only for first execution, never in command receipts or audit text.
         return commands.once(key,"CREATE_STAFF:"+c.username()+":"+name+":"+c.role(),()->{

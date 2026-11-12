@@ -192,6 +192,8 @@ export type FieldSpec = {
   min?: string | number;
   max?: string | number;
   maxLength?: number;
+  minLength?: number;
+  pattern?: string;
   step?: string | number;
   help?: string;
 };
@@ -269,6 +271,9 @@ export function FormDialog({
                 defaultValue={f.defaultValue}
                 min={f.min}
                 max={f.max}
+                minLength={f.minLength}
+                pattern={f.pattern}
+                title={f.pattern ? f.help : undefined}
                 step={f.step}
                 maxLength={f.maxLength ?? (f.type === 'text' || !f.type ? 400 : undefined)}
               />
