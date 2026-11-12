@@ -2,11 +2,13 @@
 Trust only Cloudflare addresses; never trust CF-Connecting-IP from arbitrary peers.
 Run on VPS as administrator, then nginx -t and reload nginx.
 """
-import ipaddress,urllib.request,pathlib,os
+import ipaddress,urllib.request,pathlib,os,json
 networks=[]
+with urllib.request.urlopen('https://api.cloudflare.com/client/v4/ips',timeout=20) as response:
+ payload=json.load(response)
+if payload.get('success') is not True:raise RuntimeError('Cloudflare API did not return success')
 for version in (4,6):
- with urllib.request.urlopen(f'https://www.cloudflare.com/ips-v{version}',timeout=20) as response:
-  lines=response.read().decode('ascii').splitlines()
+ lines=payload['result'][f'ipv{version}_cidrs']
  if len(lines)<5:raise RuntimeError('Cloudflare range list is unexpectedly short')
  for line in lines:
   network=ipaddress.ip_network(line.strip(),strict=True)
