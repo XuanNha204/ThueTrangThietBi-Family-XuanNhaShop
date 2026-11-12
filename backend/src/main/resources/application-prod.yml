@@ -1,0 +1,50 @@
+spring:
+  config:
+    import: optional:configtree:/run/secrets/
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USER:xuannha}
+  flyway:
+    clean-disabled: true
+server:
+  address: 0.0.0.0
+  port: ${PORT:8080}
+  forward-headers-strategy: native
+  tomcat:
+    threads:
+      max: 40
+      min-spare: 5
+    accept-count: 50
+    accesslog:
+      enabled: false
+    max-swallow-size: 6MB
+  servlet:
+    session:
+      tracking-modes: cookie
+      cookie:
+        secure: true
+        same-site: lax
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    org.springframework.jdbc: WARN
+app:
+  files:
+    allow-pdf: false
+  auth-rate-limit: true
+  seed: false
+  dev-password: unused-in-production
+  private-files: ${PRIVATE_FILES:/data/private-files}
+  notifications: ${NOTIFICATION_FILE:/data/notifications.ndjson}
+  bootstrap:
+    enabled: ${BOOTSTRAP_ENABLED:false}
+    username: ${BOOTSTRAP_USERNAME:shopowner}
+    name: ${SHOP_OWNER_NAME:Chủ cửa hàng XuanNha}
+    warehouse: ${SHOP_WAREHOUSE:Kho XuanNha}
+    address: ${SHOP_ADDRESS:}

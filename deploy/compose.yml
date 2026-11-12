@@ -1,0 +1,82 @@
+name: xuannhashop
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: xuannhashop
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password, owner_password, runtime_password]
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/10-app.sh:ro
+    networks: [data]
+    mem_limit: 1g
+    shm_size: 128mb
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d xuannhashop"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: &logs
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  backend:
+    image: xuannhashop-backend:${RELEASE_TAG:-local}
+    build: {context: .., dockerfile: backend/Dockerfile}
+    restart: unless-stopped
+    depends_on:
+      db: {condition: service_healthy}
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://db:5432/xuannhashop
+      DATABASE_USER: xuannha_runtime
+      SPRING_FLYWAY_USER: xuannha_owner
+      BOOTSTRAP_ENABLED: ${BOOTSTRAP_ENABLED:-false}
+      BOOTSTRAP_USERNAME: ${BOOTSTRAP_USERNAME:-shopowner}
+      SHOP_OWNER_NAME: ${SHOP_OWNER_NAME:-Huỳnh Xuân Nhã}
+      SHOP_ADDRESS: ${SHOP_ADDRESS:?Set SHOP_ADDRESS}
+      SEPAY_WEBHOOK_ENABLED: ${SEPAY_WEBHOOK_ENABLED:-false}
+      SEPAY_CHANNEL: live
+      TZ: Asia/Ho_Chi_Minh
+    secrets:
+      - {source: runtime_password, target: spring.datasource.password}
+      - {source: owner_password, target: spring.flyway.password}
+      - {source: bootstrap_password, target: bootstrap.password}
+      - {source: sepay_secret, target: app.sepay.webhook-secret}
+    volumes: [files:/data]
+    networks: [data, edge]
+    mem_limit: 1400m
+    cpus: 1.5
+    read_only: true
+    tmpfs: ['/tmp:size=128m,mode=1777']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logs
+  web:
+    image: xuannhashop-web:${RELEASE_TAG:-local}
+    build: {context: .., dockerfile: deploy/Dockerfile.web}
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes: [caddy_data:/data, caddy_config:/config]
+    networks: [edge]
+    mem_limit: 256m
+    logging: *logs
+networks:
+  data: {internal: true}
+  edge: {}
+volumes:
+  postgres: {}
+  files: {}
+  caddy_data: {}
+  caddy_config: {}
+secrets:
+  postgres_password: {file: ./secrets/postgres_password}
+  owner_password: {file: ./secrets/owner_password}
+  runtime_password: {file: ./secrets/runtime_password}
+  bootstrap_password: {file: ./secrets/bootstrap_password}
+  sepay_secret: {file: ./secrets/sepay_secret}

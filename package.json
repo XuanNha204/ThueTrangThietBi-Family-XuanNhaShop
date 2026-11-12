@@ -1,0 +1,24 @@
+{
+  "name": "xuannhashop-dev",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/dev.mjs setup",
+    "dev": "node scripts/dev.mjs start",
+    "dev:restart": "node scripts/dev.mjs restart-backend",
+    "stop": "node scripts/dev.mjs stop",
+    "status": "node scripts/dev.mjs status",
+    "test:backend": "node scripts/dev.mjs test",
+    "test:e2e": "npm --prefix web-ui run test:e2e",
+    "build": "node scripts/dev.mjs build",
+    "sepay:configure": "node scripts/configure-sepay.mjs",
+    "sepay:test": "node scripts/test-sepay-webhook.mjs",
+    "backup": "node scripts/recovery.mjs backup",
+    "backup:verify": "node scripts/recovery.mjs verify",
+    "backup:restore": "node scripts/recovery.mjs restore",
+    "backup:drill": "node scripts/recovery-drill.mjs"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.6"
+  }
+}

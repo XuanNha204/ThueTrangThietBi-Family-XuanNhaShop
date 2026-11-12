@@ -1,0 +1,9 @@
+[Unit]
+Description=XuanNhaShop consistent DB and attachments backup
+Requires=docker.service
+After=docker.service
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/xuannhashop/deploy
+ExecStart=/usr/bin/bash /opt/xuannhashop/deploy/backup.sh
+UMask=0077

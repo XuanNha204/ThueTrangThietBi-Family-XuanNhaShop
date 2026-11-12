@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: xuannhashop
+  profiles:
+    default: dev
+  task:
+    scheduling:
+      pool:
+        size: 2
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:54329/xuannhashop_dev}
+    username: ${DATABASE_USER:xuannha}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 12
+      minimum-idle: 2
+      connection-timeout: 5000
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    time-zone: UTC
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+server:
+  shutdown: graceful
+  address: 127.0.0.1
+  port: ${PORT:8085}
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        name: XUANNHA_SESSION
+  error:
+    include-message: never
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+app:
+  private-files: ${PRIVATE_FILES:../.dev/private-files}
+  notifications: ${NOTIFICATION_FILE:../.dev/notifications.ndjson}
+  dev-password: ${DEV_PASSWORD:unused-unless-dev-seed-enabled}
+  seed: ${DEV_SEED:true}
+  jobs-enabled: ${JOBS_ENABLED:true}
+  hold-minutes: 20
+  buffer-minutes: 30
+  reminder-hours: ${REMINDER_HOURS:24}
+  sepay:
+    enabled: ${SEPAY_WEBHOOK_ENABLED:false}
+    webhook-secret: ${SEPAY_WEBHOOK_SECRET:}
+    channel: ${SEPAY_CHANNEL:dev}

@@ -1,0 +1,12 @@
+**/node_modules
+**/target
+**/dist
+**/test-results
+**/playwright-report
+.dev
+.git
+TaiLieu.md
+**/.env*
+deploy/secrets
+deploy/backups
+**/*.log

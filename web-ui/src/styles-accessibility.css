@@ -1,0 +1,1022 @@
+/* Readable Vietnamese labels and stronger contrast on light surfaces. */
+:root {
+  --muted: #58634f;
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.cat-4 {
+  background: #b4b995;
+}
+.bar {
+  min-height: 0;
+}
+p,
+small,
+.muted,
+.field small,
+.secure-note,
+.login-security,
+.login-switch,
+.demo-accounts p,
+.report-help,
+.deposit-note,
+.policy-note,
+.summary-line,
+.subtle-code,
+.product-info > p,
+.product-deposit,
+.specifications,
+.specifications summary,
+.product-category,
+.product-price small,
+.hero-copy > p,
+.hero-trust,
+.benefit-strip span,
+.section-heading p,
+.how-grid p,
+.store-footer p,
+.store-footer > .store-container > span,
+.shop-switch small,
+.store-shortcut,
+.sidebar-profile small,
+.dev-label,
+.breadcrumb,
+.topbar-date,
+.page-heading p,
+.welcome-banner p,
+.stat-card > div > span,
+.stat-card > small,
+.period-pill,
+.chart-legend,
+.chart-legend span,
+.chart-column > span,
+.category-progress > div > div:first-child,
+.category-progress small,
+.quick-grid small,
+.summary-pills > span,
+.inventory-summary > button > span,
+.finance-cards > div > span,
+.finance-cards > div > small,
+.support-card > .subtle-code,
+.support-meta,
+.support-meta strong,
+.support-card > p,
+.support-resolution p,
+.calendar-day > div:first-child > span,
+.calendar-empty,
+.order-facts > div,
+.file-chip small,
+.terms-panel p,
+.preview-summary,
+.login-form > p,
+.login-form-area > .text-link {
+  color: var(--muted);
+}
+.button {
+  font-size: 13px;
+}
+.button.small {
+  font-size: 12px;
+}
+.text-link {
+  font-size: 13px;
+}
+.field {
+  font-size: 13px;
+}
+.checkbox-field {
+  color: var(--muted);
+}
+.field small {
+  font-size: 12px;
+}
+.side-nav a {
+  font-size: 12px;
+  min-height: 43px;
+  color: #62715a;
+}
+.nav-group {
+  font-size: 9px;
+  color: #77836e;
+}
+.shop-switch strong {
+  font-size: 11px;
+}
+.shop-switch small,
+.sidebar-profile small {
+  font-size: 10px;
+}
+.sidebar-profile strong {
+  font-size: 11px;
+}
+.store-shortcut {
+  font-size: 11px;
+}
+.dev-label {
+  font-size: 9px;
+}
+.breadcrumb,
+.breadcrumb span,
+.topbar-date,
+.topbar-search input {
+  font-size: 12px;
+}
+.page-heading p {
+  font-size: 13px;
+}
+.welcome-kicker {
+  font-size: 10px;
+  color: #62744f;
+}
+.welcome-banner p {
+  font-size: 12px;
+  max-width: 570px;
+}
+.welcome-banner a {
+  font-size: 12px;
+  color: #8b4c30;
+}
+.stat-card > div > span {
+  font-size: 12px;
+}
+.stat-card > small {
+  font-size: 11px;
+}
+.panel-heading p {
+  font-size: 12px;
+}
+.panel-heading h2 {
+  font-size: 16px;
+}
+.chart-legend,
+.chart-legend span,
+.chart-column > span,
+.chart-axis {
+  font-size: 10px;
+  color: var(--muted);
+}
+.category-progress > div > div:first-child {
+  font-size: 12px;
+}
+.category-progress small {
+  font-size: 11px;
+}
+.category-progress strong {
+  font-size: 13px;
+  color: #526743;
+}
+.quick-grid strong {
+  font-size: 12px;
+}
+.quick-grid small {
+  font-size: 11px;
+}
+.summary-pills > span {
+  font-size: 12px;
+}
+.badge {
+  font-size: 11px;
+  color: var(--muted);
+}
+.quick-grid > a {
+  padding: 18px 17px;
+}
+.app-footer {
+  font-size: 10px;
+  color: var(--muted);
+}
+th {
+  font-size: 12px;
+  color: #68765d;
+}
+td {
+  font-size: 13px;
+}
+td small {
+  font-size: 12px;
+}
+.order-code {
+  font-size: 13px;
+}
+.subtle-code {
+  font-size: 12px;
+}
+.table-toolbar select,
+.search-box input {
+  font-size: 13px;
+}
+.state-text {
+  font-size: 13px;
+}
+.money-kind {
+  font-size: 12px;
+}
+.inventory-summary > button > span,
+.finance-cards > div > span {
+  font-size: 12px;
+}
+.finance-cards > div > small {
+  font-size: 12px;
+}
+.support-meta,
+.support-meta strong,
+.support-resolution strong {
+  font-size: 12px;
+}
+.tabs button {
+  font-size: 13px;
+  color: var(--muted);
+}
+.table-scroll:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.policy-grid ul {
+  font-size: 13px;
+  color: var(--muted);
+}
+.calendar-day > div:first-child small,
+.calendar-day > div:first-child > span,
+.calendar-empty,
+.calendar-order small {
+  font-size: 11px;
+}
+.calendar-order strong {
+  font-size: 12px;
+}
+.calendar-order .badge {
+  font-size: 10px;
+}
+.store-nav nav {
+  font-size: 13px;
+}
+.store-hero .pill {
+  font-size: 11px;
+}
+.hero-copy > p {
+  font-size: 14px;
+}
+.hero-trust,
+.benefit-strip span {
+  font-size: 12px;
+}
+.section-heading p {
+  font-size: 14px;
+}
+.rental-search .search-box input {
+  font-size: 14px;
+}
+.date-field > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.date-field input {
+  font-size: 12px;
+}
+.category-tabs button,
+.sort select {
+  font-size: 12px;
+  color: #69785d;
+}
+.product-category {
+  font-size: 10px;
+}
+.availability {
+  font-size: 10px;
+  color: #4d6839;
+}
+.product-info h3 {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.product-info > p {
+  font-size: 12px;
+  min-height: 43px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-price > span {
+  font-size: 17px;
+}
+.product-price small {
+  font-size: 11px;
+}
+.product-deposit {
+  font-size: 11px;
+  min-height: 18px;
+}
+.specifications {
+  font-size: 11px;
+}
+.how-grid h3 {
+  font-size: 14px;
+}
+.how-grid p {
+  font-size: 12px;
+}
+.store-footer > .store-container > span {
+  font-size: 11px;
+}
+.store-footer p {
+  font-size: 12px;
+}
+.account-menu > div a,
+.account-menu > div button {
+  font-size: 13px;
+}
+.form-stack .field > span,
+.login-form .field > span {
+  font-size: 13px;
+}
+.dialog-heading p {
+  font-size: 12px;
+}
+.dialog .info-note {
+  font-size: 12px;
+}
+.info-note {
+  font-size: 12px;
+  color: #526443;
+}
+.info-note svg {
+  color: #657b4e;
+}
+.order-facts > div {
+  font-size: 12px;
+}
+.order-facts strong {
+  font-size: 13px;
+  color: #4e6540;
+}
+.finance-summary .summary-line {
+  font-size: 12px;
+}
+.finance-summary .info-note {
+  font-size: 12px;
+}
+.action-stack > .button {
+  font-size: 12px;
+}
+.order-actions > .text-link,
+.action-stack > p {
+  font-size: 12px;
+}
+.handover-history small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.handover-history p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.terms-panel p {
+  font-size: 12px;
+}
+.terms-panel summary {
+  color: var(--muted);
+}
+.file-chip,
+.file-chip small,
+.upload-inline .field small {
+  font-size: 11px;
+}
+.login-form > p {
+  font-size: 14px;
+}
+.login-story p {
+  font-size: 14px;
+}
+.login-form-area > .text-link,
+.login-switch,
+.login-switch button {
+  font-size: 12px;
+}
+.login-security,
+.demo-accounts,
+.demo-accounts p {
+  font-size: 11px;
+}
+.booking-line-detail > small {
+  font-size: 11px;
+}
+.booking-line-detail .field > span,
+.qty-field > span {
+  font-size: 12px;
+}
+.quote-lines strong {
+  font-size: 13px;
+}
+.quote-lines small {
+  font-size: 11px;
+}
+.quote-lines > div > span {
+  font-size: 13px;
+}
+.policy-note,
+.deposit-note,
+.booking-summary > .checkbox-field {
+  font-size: 12px;
+}
+.secure-note {
+  font-size: 11px;
+}
+.booking-section .text-button {
+  font-size: 13px;
+}
+.report-help,
+.report-panel p {
+  font-size: 12px;
+}
+.status-ready,
+.status-approved,
+.status-completed,
+.status-paid,
+.status-closed,
+.status-resolved,
+.status-sent {
+  color: #3f6645;
+}
+.status-held,
+.status-pending,
+.status-await_inspection,
+.status-await_acceptance,
+.status-await_settlement {
+  color: #856222;
+}
+.status-preparing,
+.status-partial_return {
+  color: #836339;
+}
+.status-maintenance,
+.status-failed,
+.status-suspended {
+  color: #9a4b32;
+}
+.status-cancelled,
+.status-rejected,
+.status-expired,
+.status-disposed {
+  color: #656b5e;
+}
+.pill {
+  color: #566b3f;
+}
+.money-kind {
+  color: #496a34;
+}
+.money-kind.deposit {
+  color: #806225;
+}
+.money-kind.out {
+  color: #8d4f2d;
+}
+.floating-tag {
+  color: #626e4e;
+}
+.brand small {
+  color: #626e52;
+  font-size: 9px;
+}
+.art-note,
+.hero-art-label,
+.product-code,
+.how-grid > div > span {
+  color: #58634f;
+}
+.hero-art-label,
+.product-code {
+  font-size: 10px;
+}
+.category-tabs button,
+.sort select {
+  color: #58634f;
+}
+.category-tabs button.active {
+  color: #8c422d;
+}
+.login-story .eyebrow,
+.login-story p,
+.login-story > small,
+.login-form > .eyebrow,
+.demo-accounts summary {
+  color: #58634f;
+}
+.shop-avatar,
+.nav-group,
+.welcome-kicker,
+.welcome-banner p strong {
+  color: #526044;
+}
+.side-nav a.active {
+  color: #8c422d;
+}
+.table-scroll {
+  position: relative;
+  max-width: 100%;
+}
+@media (max-width: 1100px) {
+  .welcome-banner p {
+    max-width: 360px;
+  }
+  .store-nav nav {
+    font-size: 12px;
+  }
+  .product-info h3 {
+    font-size: 14px;
+  }
+}
+@media (max-width: 760px) {
+  .welcome-banner p {
+    max-width: 330px;
+  }
+  .page-heading p {
+    font-size: 12px;
+  }
+  .side-nav a {
+    font-size: 13px;
+  }
+  .stat-card > div > span {
+    font-size: 11px;
+  }
+  .stat-card > small {
+    font-size: 11px;
+  }
+  .category-progress > div > div:first-child {
+    font-size: 11px;
+  }
+  .table-toolbar .search-box input,
+  .table-toolbar select {
+    font-size: 12px;
+  }
+  .hero-copy > p {
+    font-size: 13px;
+  }
+  .hero-trust,
+  .benefit-strip span {
+    font-size: 11px;
+  }
+  .section-heading p {
+    font-size: 12px;
+  }
+  .category-tabs button {
+    font-size: 11px;
+  }
+  .product-info h3 {
+    font-size: 14px;
+  }
+  .product-info > p {
+    font-size: 12px;
+  }
+  .date-field input {
+    font-size: 12px;
+  }
+  .rental-search .search-box input {
+    font-size: 13px;
+  }
+  .booking-line-detail select {
+    font-size: 12px;
+  }
+  .calendar-order small {
+    font-size: 12px;
+  }
+}
+@media (max-width: 500px) {
+  .welcome-banner p {
+    max-width: 245px;
+    font-size: 11px;
+  }
+  .welcome-banner h2 {
+    font-size: 24px;
+  }
+  .stat-card > div > span {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .stat-card > small {
+    font-size: 10px;
+  }
+  .stat-card > strong {
+    font-size: 23px;
+  }
+  .category-progress {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .category-progress > div > div:first-child {
+    font-size: 12px;
+  }
+  .chart-legend,
+  .chart-legend span,
+  .chart-column > span,
+  .chart-axis {
+    font-size: 9px;
+  }
+  .quick-grid strong {
+    font-size: 13px;
+  }
+  .quick-grid small {
+    font-size: 12px;
+  }
+  .section-heading .eyebrow {
+    font-size: 9px;
+  }
+  .category-tabs button {
+    font-size: 11px;
+    min-height: 38px;
+  }
+  .product-info h3 {
+    font-size: 12px;
+    line-height: 1.65;
+    min-height: 40px;
+  }
+  .product-info > p {
+    font-size: 11px;
+    min-height: 40px;
+  }
+  .product-category {
+    font-size: 9px;
+    min-height: 28px;
+  }
+  .product-price > span {
+    font-size: 15px;
+  }
+  .product-price small {
+    font-size: 10px;
+    display: block;
+  }
+  .product-deposit {
+    font-size: 10px;
+    min-height: 32px;
+    line-height: 1.8;
+  }
+  .specifications {
+    font-size: 10px;
+  }
+  .availability {
+    font-size: 9px;
+    max-width: calc(100% - 16px);
+  }
+  .button.icon-rent {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+  .product-code {
+    font-size: 9px;
+    color: #70765f;
+  }
+  .hero-copy > p {
+    font-size: 13px;
+  }
+  .hero-trust {
+    font-size: 10px;
+  }
+  .benefit-strip span {
+    font-size: 11px;
+  }
+  .how-grid h3 {
+    font-size: 13px;
+  }
+  .how-grid p {
+    font-size: 12px;
+  }
+  .section-heading p {
+    font-size: 12px;
+  }
+  .date-field > span {
+    font-size: 10px;
+  }
+  .date-field input {
+    font-size: 11px;
+  }
+  .field input,
+  .field textarea,
+  .field select {
+    font-size: 16px;
+  }
+  .booking-line-detail .field select,
+  .qty-field input {
+    font-size: 12px;
+  }
+  .booking-line-detail > small {
+    font-size: 10px;
+  }
+  .qty-field > span {
+    font-size: 10px;
+  }
+  .finance-cards > div > span {
+    font-size: 11px;
+  }
+  .finance-cards > div > small {
+    font-size: 10px;
+  }
+  .order-facts > div {
+    font-size: 11px;
+  }
+  .order-facts strong {
+    font-size: 12px;
+  }
+  .summary-pills > span {
+    font-size: 10px;
+  }
+  .app-footer {
+    font-size: 10px;
+  }
+  .topbar-date {
+    font-size: 10px;
+  }
+  .breadcrumb,
+  .breadcrumb span {
+    font-size: 11px;
+  }
+}
+.bank-payment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.bank-payment-card {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+.bank-payment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.bank-payments {
+  min-width: 0;
+}
+.payment-code {
+  overflow-wrap: anywhere;
+}
+.payment-qr {
+  flex: 0 0 220px;
+  max-width: 100%;
+}
+.payment-qr img {
+  display: block;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  object-fit: contain;
+}
+.payment-qr small {
+  display: block;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+@media (max-width: 700px) {
+  .bank-payment-card {
+    flex-direction: column;
+  }
+  .bank-payments .panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+.maintenance-plans {
+  margin: 24px 0;
+}
+.sepay-bank-configuration {
+  margin: 16px 0;
+}
+.sepay-bank-configuration > p {
+  margin-bottom: 10px;
+}
+.checklist-management-body {
+  padding: 0 24px 24px;
+}
+.checklist-management-body > .field {
+  max-width: 560px;
+  margin-bottom: 16px;
+}
+.checklist-definition {
+  padding-left: 20px;
+}
+.checklist-definition li {
+  margin: 12px 0;
+}
+.checklist-definition li span {
+  display: block;
+  margin-top: 4px;
+}
+.inspection-extra,
+.inspection-criterion {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.inspection-criterion + .inspection-criterion {
+  margin-top: 14px;
+}
+.inspection-criterion .field + .field,
+.inspection-criterion .checkbox-field {
+  margin-top: 12px;
+}
+.inspection-extra legend,
+.inspection-criterion legend {
+  font-weight: 600;
+  padding: 0 6px;
+}
+.checklist legend {
+  color: var(--muted);
+}
+.equipment-history article {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.equipment-history article p {
+  margin: 10px 0;
+}
+.history-event-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.equipment-history summary {
+  padding: 12px 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+.inspection-results {
+  padding-left: 22px;
+}
+.inspection-results li {
+  margin: 12px 0;
+}
+.inspection-results small {
+  display: block;
+  margin-top: 4px;
+}
+.product-prices {
+  margin-bottom: 24px;
+}
+.product-prices > .info-note {
+  margin: 0 24px;
+}
+.product-prices h2 {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+.product-prices .row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.price-history-entry {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.price-history-entry p {
+  margin: 8px 0;
+}
+.sepay-inbox td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 105px;
+}
+.sepay-inbox td:nth-child(3) {
+  max-width: 200px;
+  min-width: 155px;
+}
+.sepay-inbox td:nth-child(4) {
+  max-width: 260px;
+  min-width: 180px;
+}
+.sepay-inbox td:last-child {
+  min-width: 155px;
+}
+.sepay-inbox .bank-payment-actions {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .sepay-inbox > .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .maintenance-plans .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.workflow-panel {
+  padding: 24px;
+  margin-bottom: 24px;
+  min-width: 0;
+}
+.workflow-panel h2 {
+  font-size: 20px;
+  margin: 20px 0 16px;
+}
+.workflow-panel h2:first-child {
+  margin-top: 0;
+}
+.workflow-panel h3 {
+  font-size: 16px;
+}
+.workflow-toolbar,
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+.workflow-panel > .button,
+.workflow-panel > .info-note,
+.workflow-panel > .field {
+  margin-bottom: 18px;
+}
+.workflow-panel > .field {
+  max-width: 620px;
+}
+.workflow-panel td {
+  white-space: normal;
+  min-width: 130px;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+.workflow-panel td small {
+  display: block;
+  margin-top: 8px;
+}
+.workflow-panel details {
+  margin: 12px 0;
+}
+.workflow-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.workflow-panel .table-scroll {
+  margin-top: 16px;
+}
+.guide-card {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.preserve-lines {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.performance-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.performance-metrics > div {
+  background: var(--surface-alt, #f4f6f0);
+  border: 1px solid var(--border);
+  padding: 18px;
+  border-radius: 10px;
+}
+.performance-metrics dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+.performance-metrics dd {
+  margin: 12px 0 0;
+  font-size: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.eligibility-notice {
+  margin: 20px 0;
+}
+@media (max-width: 700px) {
+  .workflow-panel {
+    padding: 16px;
+  }
+  .performance-metrics {
+    grid-template-columns: 1fr;
+  }
+  .workflow-toolbar > .button {
+    flex: 1 1 140px;
+  }
+}

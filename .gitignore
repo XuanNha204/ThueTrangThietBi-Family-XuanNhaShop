@@ -1,0 +1,18 @@
+.dev/
+.env
+/TaiLieu.md
+node_modules/
+backend/target/
+web-ui/node_modules/
+web-ui/dist/
+web-ui/test-results/
+web-ui/playwright-report/
+*.log
+.idea/
+.DS_Store
+deploy/secrets/
+deploy/backups/
+deploy/.backup.lock
+# User requested: keep Docs out of this repository (all letter casing).
+/[Dd][Oo][Cc][Ss]/
+*.tsbuildinfo

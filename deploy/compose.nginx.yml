@@ -1,0 +1,7 @@
+# Use when an existing Nginx already owns ports 80/443.
+services:
+  web:
+    ports: !override
+      - '127.0.0.1:8088:80'
+    volumes:
+      - ./Caddyfile.nginx:/etc/caddy/Caddyfile:ro
