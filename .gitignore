@@ -1,6 +1,7 @@
 .dev/
 .env
 /TaiLieu.md
+/AnhSanPham/
 node_modules/
 backend/target/
 web-ui/node_modules/

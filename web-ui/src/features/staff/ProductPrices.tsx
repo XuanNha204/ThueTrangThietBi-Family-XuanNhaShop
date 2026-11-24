@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { History, Pencil, RefreshCw } from 'lucide-react';
+import { History, Image, Pencil, RefreshCw } from 'lucide-react';
 import type { Product } from '../../shared/types';
 import { date, money } from '../../shared/api';
 import { useApp, useCommand, useQuery } from '../../shared/state';
 import { Button, Dialog, InfoNote, Panel, QueryState, SearchInput, Table } from '../../shared/ui';
+import { ProductPhotoDialog } from './ProductPhotoDialog';
 
 type PriceChange = {
   id: string;
@@ -24,6 +25,7 @@ export function ProductPrices() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Product | null>(null);
   const [history, setHistory] = useState<Product | null>(null);
+  const [photoProduct, setPhotoProduct] = useState<Product | null>(null);
   const rows = (q.data ?? []).filter((p) =>
     (p.code + ' ' + p.name).toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi')),
   );
@@ -32,7 +34,7 @@ export function ProductPrices() {
       <div className="table-toolbar">
         <div>
           <h2>Bảng giá sản phẩm</h2>
-          <p className="muted">Giá theo một thiết bị. Chủ cửa hàng có quyền điều chỉnh.</p>
+          <p className="muted">Giá theo một thiết bị. Chủ cửa hàng có quyền cập nhật giá và ảnh.</p>
         </div>
         <Button className="secondary small" onClick={refresh} disabled={q.loading}>
           <RefreshCw size={15} aria-hidden="true" />
@@ -76,6 +78,12 @@ export function ProductPrices() {
                     <History size={15} aria-hidden="true" />
                     Lịch sử giá
                   </Button>
+                  {user?.role === 'OWNER' && (
+                    <Button className="secondary small" onClick={() => setPhotoProduct(p)}>
+                      <Image size={15} aria-hidden="true" />
+                      {p.photo ? 'Đổi ảnh' : 'Thêm ảnh'}
+                    </Button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -84,6 +92,9 @@ export function ProductPrices() {
       </QueryState>
       {editing && <PriceDialog product={editing} onClose={() => setEditing(null)} />}
       {history && <PriceHistory product={history} onClose={() => setHistory(null)} />}
+      {photoProduct && (
+        <ProductPhotoDialog product={photoProduct} onClose={() => setPhotoProduct(null)} />
+      )}
     </Panel>
   );
 }

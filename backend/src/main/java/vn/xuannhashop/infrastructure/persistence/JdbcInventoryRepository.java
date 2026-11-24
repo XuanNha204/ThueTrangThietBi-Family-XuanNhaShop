@@ -7,10 +7,21 @@ import vn.xuannhashop.business.inventory.domain.*;
 import static vn.xuannhashop.infrastructure.persistence.Sql.p;
 @Repository
 public class JdbcInventoryRepository implements InventoryRepository {
+    private static final String TYPE_WITH_PHOTO = """
+        select t.*, p.photo_id, p.illustrative, p.credit, p.source_url, p.license_url
+        from equipment_type t left join equipment_type_photo p on p.equipment_type_id = t.id
+        """;
     private final Sql s;public JdbcInventoryRepository(Sql s){this.s=s;}
-    private EquipmentType type(Map<String,Object> r){return new EquipmentType((UUID)r.get("id"),(String)r.get("code"),(String)r.get("name"),(String)r.get("category"),(String)r.get("description"),(String)r.get("specifications"),(String)r.get("icon"),(BigDecimal)r.get("daily_rate"),(BigDecimal)r.get("deposit"),(String)r.get("policy_version"),((Number)r.get("price_version")).longValue());}
-    public List<EquipmentType> catalog(){return s.rows("select * from equipment_type where active order by code",Map.of()).stream().map(this::type).toList();}
-    public EquipmentType type(UUID id){var r=s.one("select * from equipment_type where id=:id and active",p("id",id));return r==null?null:type(r);}
+    private EquipmentType type(Map<String,Object> r){
+        UUID photoId = (UUID) r.get("photo_id");
+        ProductPhoto photo = photoId == null ? null : new ProductPhoto(photoId, (boolean) r.get("illustrative"),
+            (String) r.get("credit"), (String) r.get("source_url"), (String) r.get("license_url"));
+        return new EquipmentType((UUID)r.get("id"),(String)r.get("code"),(String)r.get("name"),(String)r.get("category"),(String)r.get("description"),(String)r.get("specifications"),(String)r.get("icon"),(BigDecimal)r.get("daily_rate"),(BigDecimal)r.get("deposit"),(String)r.get("policy_version"),((Number)r.get("price_version")).longValue(),photo);
+    }
+    public List<EquipmentType> catalog(){
+        return s.rows(TYPE_WITH_PHOTO + "where t.active order by t.code", Map.of()).stream().map(this::type).toList();
+    }
+    public EquipmentType type(UUID id){var r=s.one(TYPE_WITH_PHOTO + "where t.id=:id and t.active",p("id",id));return r==null?null:type(r);}
     public List<Map<String,Object>> assets(){return s.rows("select e.id,e.code,e.type_id,e.warehouse_id,e.state,e.version,e.serial_number,e.acquired_on,e.warranty_until,t.name,t.category,w.name warehouse from equipment e join equipment_type t on t.id=e.type_id join warehouse w on w.id=e.warehouse_id order by e.code",Map.of());}
     public Equipment asset(UUID id){var r=s.one("select * from equipment where id=:id",p("id",id));return r==null?null:new Equipment(id,(String)r.get("code"),(UUID)r.get("type_id"),(String)r.get("state"));}
     public void state(UUID id,String state){s.update("update equipment set state=:state,version=version+1 where id=:id",p("id",id,"state",state));}

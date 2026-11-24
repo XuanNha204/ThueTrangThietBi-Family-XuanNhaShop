@@ -19,6 +19,13 @@ export type Product = {
   deposit: number;
   policyVersion: string;
   available?: number;
+  photo?: {
+    id: string;
+    illustrative: boolean;
+    credit: string | null;
+    sourceUrl: string | null;
+    licenseUrl: string | null;
+  };
 };
 export type Customer = {
   id: string;

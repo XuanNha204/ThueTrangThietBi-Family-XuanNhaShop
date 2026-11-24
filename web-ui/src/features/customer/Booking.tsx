@@ -8,7 +8,7 @@ import { localInput, shopDate, money, request } from '../../shared/api';
 import { useApp, useCommand, useQuery } from '../../shared/state';
 import { EligibilityNotice } from './EligibilityNotice';
 import { Button, InfoNote, PageHeader, QueryState } from '../../shared/ui';
-import { DeviceArt } from '../../shared/DeviceArt';
+import { ProductImage, ProductPhotoCredit } from '../../shared/ProductImage';
 export function Booking() {
   const { user } = useApp();
   const [params] = useSearchParams(),
@@ -134,9 +134,11 @@ export function Booking() {
                   return (
                     <div className="booking-line" key={i}>
                       <div className="mini-art">
-                        <DeviceArt kind={product?.icon} />
+                        <ProductImage product={product} />
                       </div>
                       <div className="booking-line-detail">
+                        {product?.photo?.illustrative && <small>Ảnh minh họa</small>}
+                        {product?.photo && <ProductPhotoCredit photo={product.photo} />}
                         <label className="field">
                           <span>Thiết bị {i + 1}</span>
                           <select

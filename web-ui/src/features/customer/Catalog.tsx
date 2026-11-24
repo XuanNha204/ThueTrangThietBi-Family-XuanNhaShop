@@ -18,6 +18,7 @@ import { date, localInput, shopDate, money, request, clearCsrf } from '../../sha
 import { useApp, useQuery } from '../../shared/state';
 import { Button, Empty, QueryState } from '../../shared/ui';
 import { DeviceArt } from '../../shared/DeviceArt';
+import { ProductImage, ProductPhotoCredit } from '../../shared/ProductImage';
 export function Brand() {
   return (
     <Link to="/" className="brand" aria-label="XuanNhaShop — Trang chủ">
@@ -248,7 +249,9 @@ export function Catalog() {
               <div className="product-grid">
                 {products.map((p, index) => (
                   <article className="product-card" key={p.id}>
-                    <div className={`product-visual tone-${index % 4}`}>
+                    <div
+                      className={`product-visual tone-${index % 4}${p.photo ? ' has-product-photo' : ''}`}
+                    >
                       <span className={`availability ${p.available === 0 ? 'unavailable' : ''}`}>
                         <i />
                         {p.available === undefined
@@ -257,7 +260,10 @@ export function Catalog() {
                             ? `Còn ${p.available} thiết bị`
                             : 'Hết trong khoảng này'}
                       </span>
-                      <DeviceArt kind={p.icon} />
+                      <ProductImage product={p} />
+                      {p.photo?.illustrative && (
+                        <span className="product-illustration">Ảnh minh họa</span>
+                      )}
                       <span className="product-code">{p.code}</span>
                     </div>
                     <div className="product-info">
@@ -287,6 +293,7 @@ export function Catalog() {
                         <summary>Thông số & phụ kiện</summary>
                         {p.specifications}
                       </details>
+                      {p.photo && <ProductPhotoCredit photo={p.photo} />}
                     </div>
                   </article>
                 ))}

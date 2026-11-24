@@ -35,7 +35,9 @@ public class SecurityConfig {
     @Bean SecurityFilterChain chain(HttpSecurity http,SecurityContextRepository contexts,CsrfTokenRepository csrf,IdentityRepository identities,org.springframework.core.env.Environment env,vn.xuannhashop.infrastructure.persistence.Sql sql)throws Exception{
         http.securityContext(c->c.securityContextRepository(contexts))
             .csrf(c->c.csrfTokenRepository(csrf).ignoringRequestMatchers(req->req.getMethod().equals("POST")&&req.getRequestURI().equals(req.getContextPath()+vn.xuannhashop.business.finance.application.SePayWebhookApplication.PATH)))
-            .authorizeHttpRequests(a->a.requestMatchers(org.springframework.http.HttpMethod.POST,vn.xuannhashop.business.finance.application.SePayWebhookApplication.PATH).permitAll().requestMatchers("/api/auth/csrf","/api/auth/login","/api/auth/register","/api/catalog/**","/actuator/health","/actuator/health/**").permitAll().requestMatchers("/actuator/**").hasRole("OWNER").anyRequest().authenticated())
+            .authorizeHttpRequests(a->a.requestMatchers(org.springframework.http.HttpMethod.POST,vn.xuannhashop.business.finance.application.SePayWebhookApplication.PATH).permitAll().requestMatchers("/api/auth/csrf","/api/auth/login","/api/auth/register","/api/catalog/**","/actuator/health","/actuator/health/**").permitAll()
+                .requestMatchers("/api/equipment-types/*/photo", "/api/equipment-types/*/photo/*", "/actuator/**").hasRole("OWNER")
+                .anyRequest().authenticated())
             .exceptionHandling(e->e.authenticationEntryPoint((req,res,ex)->json(res,401,"Vui lòng đăng nhập.")).accessDeniedHandler((req,res,ex)->json(res,403,"Không đủ quyền hoặc mã CSRF hết hạn. Hãy tải lại trang.")))
             .logout(l->l.logoutUrl("/api/auth/logout").invalidateHttpSession(true).deleteCookies("XUANNHA_SESSION").logoutSuccessHandler((req,res,a)->res.setStatus(204)))
             .headers(h->h.contentSecurityPolicy(c->c.policyDirectives("default-src 'none'; frame-ancestors 'none'")))
