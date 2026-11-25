@@ -54,6 +54,8 @@ logging:
     root: INFO
     org.springframework: INFO
 app:
+  gmail:
+    enabled: ${GMAIL_LOGIN_ENABLED:false}
   google:
     enabled: ${GOOGLE_OAUTH_ENABLED:false}
     client-id: ${GOOGLE_OAUTH_CLIENT_ID:}

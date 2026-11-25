@@ -4,6 +4,11 @@ import vn.xuannhashop.business.identity.domain.*;
 public interface IdentityRepository {
     record Credentials(UserAccount account,String passwordHash) {}
     Credentials find(String username);
+    Credentials findByLoginGmail(String gmail);
+    IdentityApplication.LoginIdentity loginIdentity(String username);
+    IdentityApplication.LoginIdentity loginIdentity(UUID accountId);
+    void lockGmail(String gmail);
+    boolean assignGmail(UUID account, String gmail);
     UserAccount findByGoogleSubject(String subject);
     void lockGoogleSubject(String subject);
     void bindGoogleSubject(String subject, UUID account);

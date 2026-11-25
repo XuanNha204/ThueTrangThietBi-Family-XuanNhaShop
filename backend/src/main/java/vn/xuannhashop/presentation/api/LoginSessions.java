@@ -33,6 +33,12 @@ class LoginSessions {
         start(localAuthentication(account), request, response);
     }
 
+    void beginPending(HttpServletRequest request, HttpServletResponse response) {
+        request.getSession();
+        request.changeSessionId();
+        save(null, request, response);
+    }
+
     void finishOAuthLogin(UserAccount account, HttpServletRequest request, HttpServletResponse response) {
         // The OAuth authentication filter has already rotated the session ID.
         save(account == null ? null : localAuthentication(account), request, response);

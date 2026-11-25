@@ -28,7 +28,7 @@ import vn.xuannhashop.business.shared.DomainException;
 @EnableMethodSecurity
 public class SecurityConfig {
     @Bean PasswordEncoder passwordEncoder(){return new BCryptPasswordEncoder(11);}
-    @Bean UserDetailsService users(IdentityRepository r){return name->{var c=r.find(name);if(c==null||c.passwordHash()==null)throw new UsernameNotFoundException("Tài khoản không hợp lệ");return User.withUsername(c.account().username()).password(c.passwordHash()).roles(c.account().role()).disabled(!c.account().enabled()).build();};}
+    @Bean UserDetailsService users(IdentityRepository r){return name->{var c=name.contains("@")?r.findByLoginGmail(name):r.find(name);if(c==null||c.passwordHash()==null)throw new UsernameNotFoundException("Tài khoản không hợp lệ");return User.withUsername(c.account().username()).password(c.passwordHash()).roles(c.account().role()).disabled(!c.account().enabled()).build();};}
     @Bean AuthenticationManager authenticationManager(AuthenticationConfiguration c)throws Exception{return c.getAuthenticationManager();}
     @Bean SecurityContextRepository contexts(){return new HttpSessionSecurityContextRepository();}
     @Bean SessionAuthenticationStrategy sessionStrategy(){return new ChangeSessionIdAuthenticationStrategy();}
@@ -38,8 +38,8 @@ public class SecurityConfig {
         http.securityContext(c->c.securityContextRepository(contexts))
             .csrf(c->c.csrfTokenRepository(csrf).ignoringRequestMatchers(req->req.getMethod().equals("POST")&&req.getRequestURI().equals(req.getContextPath()+vn.xuannhashop.business.finance.application.SePayWebhookApplication.PATH)))
             .authorizeHttpRequests(a->a.requestMatchers(HttpMethod.POST,vn.xuannhashop.business.finance.application.SePayWebhookApplication.PATH).permitAll().requestMatchers("/api/auth/csrf","/api/auth/login","/api/auth/register","/api/catalog/**","/actuator/health","/actuator/health/**").permitAll()
-                .requestMatchers(HttpMethod.GET,"/api/auth/options",GoogleOAuthConfiguration.START_BASE + "/google",GoogleOAuthConfiguration.CALLBACK,"/api/auth/google/pending").permitAll()
-                .requestMatchers(HttpMethod.POST,"/api/auth/google/complete").permitAll()
+                .requestMatchers(HttpMethod.GET,"/api/auth/options","/api/auth/otp/state",GoogleOAuthConfiguration.START_BASE + "/google",GoogleOAuthConfiguration.CALLBACK,"/api/auth/google/pending").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/auth/google/complete","/api/auth/otp/enroll","/api/auth/otp/verify","/api/auth/otp/resend","/api/auth/otp/cancel").permitAll()
                 .requestMatchers("/api/equipment-types/*/photo", "/api/equipment-types/*/photo/*", "/actuator/**").hasRole("OWNER")
                 .anyRequest().authenticated())
             .exceptionHandling(e->e.authenticationEntryPoint((req,res,ex)->json(res,401,"Vui lòng đăng nhập.")).accessDeniedHandler((req,res,ex)->json(res,403,"Không đủ quyền hoặc mã CSRF hết hạn. Hãy tải lại trang.")))

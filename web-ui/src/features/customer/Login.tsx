@@ -4,18 +4,26 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { Brand } from './Catalog';
 import { DeviceArt } from '../../shared/DeviceArt';
-import { Button } from '../../shared/ui';
+import { Button, Loading } from '../../shared/ui';
 import { request, clearCsrf, roles } from '../../shared/api';
-import { useApp } from '../../shared/state';
+import { useApp, useQuery } from '../../shared/state';
 import type { User } from '../../shared/types';
 import { staffNavigation } from '../staff/Shell';
 import { passwordHint, passwordPattern } from '../../shared/password';
 import { GoogleLoginContinuation, GoogleSignIn } from './GoogleLogin';
+import { GmailVerification } from './GmailVerification';
+import type { GmailStage } from './GmailVerification';
 export function Login() {
   const { setUser } = useApp();
   const navigate = useNavigate(),
     location = useLocation();
-  const google = new URLSearchParams(location.search).get('google');
+  const options = useQuery<{ gmail: boolean; google: boolean }>('/auth/options');
+  const gmailEnabled = options.data?.gmail === true;
+  const pending = useQuery<GmailStage>(gmailEnabled ? '/auth/otp/state' : null);
+  const [stageOverride, setStage] = useState<GmailStage | null>(null);
+  const [legacy, setLegacy] = useState(false);
+  const stage = stageOverride ?? pending.data;
+  const google = options.data?.google ? new URLSearchParams(location.search).get('google') : null;
   const googleError =
     google === 'blocked'
       ? 'Tài khoản khách thuê đang bị khóa. Hãy liên hệ cửa hàng để được hỗ trợ.'
@@ -28,46 +36,65 @@ export function Login() {
     [show, setShow] = useState(false),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
+  const gmailField = gmailEnabled && (mode === 'register' || !legacy);
+
+  function finishLogin(u: User) {
+    clearCsrf();
+    setUser(u);
+    const target = (location.state as { from?: string } | null)?.from;
+    const path = target?.split('?')[0] ?? '';
+    const destinationRoles = staffNavigation.find(
+      (item) => item.path !== '/app' && (path === item.path || path.startsWith(item.path + '/')),
+    )?.roles;
+    const canReturn =
+      target &&
+      (u.role === 'CUSTOMER'
+        ? /^\/(?:my-(?:rentals|support|profile)(?:\/|$)|book(?:\?|$)|$)/.test(target)
+        : path === '/' ||
+          path === '/app' ||
+          (path === '/book' && ['OWNER', 'MANAGER', 'INVENTORY'].includes(u.role)) ||
+          (path === '/app/notifications' && ['OWNER', 'MANAGER'].includes(u.role)) ||
+          destinationRoles?.includes(u.role));
+    navigate(canReturn ? target : u.role === 'CUSTOMER' ? '/my-rentals' : '/app', {
+      replace: true,
+    });
+  }
+
+  function continueVerification(next: GmailStage) {
+    clearCsrf();
+    setPassword('');
+    setShow(false);
+    setStage(next);
+  }
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setError('');
     const form = new FormData(e.currentTarget);
     try {
-      if (mode === 'register')
-        await request('/auth/register', {
+      if (mode === 'register') {
+        const result = await request<GmailStage | { id: string }>('/auth/register', {
           method: 'POST',
           body: {
-            username,
+            ...(gmailEnabled ? { email: username } : { username }),
             password,
             name: form.get('name'),
             phone: form.get('phone'),
             address: form.get('address'),
           },
         });
-      const u = await request<User>('/auth/login', {
+        if ('stage' in result) {
+          continueVerification(result);
+          return;
+        }
+      }
+      const result = await request<User | GmailStage>('/auth/login', {
         method: 'POST',
         body: { username, password },
       });
-      clearCsrf();
-      setUser(u);
-      const target = (location.state as { from?: string } | null)?.from;
-      const path = target?.split('?')[0] ?? '';
-      const destinationRoles = staffNavigation.find(
-        (item) => item.path !== '/app' && (path === item.path || path.startsWith(item.path + '/')),
-      )?.roles;
-      const canReturn =
-        target &&
-        (u.role === 'CUSTOMER'
-          ? /^\/(?:my-(?:rentals|support|profile)(?:\/|$)|book(?:\?|$)|$)/.test(target)
-          : path === '/' ||
-            path === '/app' ||
-            (path === '/book' && ['OWNER', 'MANAGER', 'INVENTORY'].includes(u.role)) ||
-            (path === '/app/notifications' && ['OWNER', 'MANAGER'].includes(u.role)) ||
-            destinationRoles?.includes(u.role));
-      navigate(canReturn ? target : u.role === 'CUSTOMER' ? '/my-rentals' : '/app', {
-        replace: true,
-      });
+      if ('stage' in result) continueVerification(result);
+      else finishLogin(result);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -100,7 +127,15 @@ export function Login() {
         </Link>
         <div className="login-form">
           <div className="eyebrow">XuanNhaShop</div>
-          {google === 'setup' || google === 'success' ? (
+          {options.loading || (gmailEnabled && !stage && !pending.error) ? (
+            <Loading />
+          ) : options.error || (gmailEnabled && pending.error && !stageOverride) ? (
+            <div role="alert" className="inline-error">
+              {options.error || pending.error}
+            </div>
+          ) : stage && stage.stage !== 'none' ? (
+            <GmailVerification stage={stage} onChange={setStage} onVerified={finishLogin} />
+          ) : google === 'setup' || google === 'success' ? (
             <GoogleLoginContinuation key={google} phase={google} />
           ) : (
             <>
@@ -144,13 +179,15 @@ export function Login() {
                   </>
                 )}
                 <label className="field">
-                  <span>Tên đăng nhập</span>
+                  <span>{gmailField ? 'Địa chỉ Gmail' : 'Tên đăng nhập'}</span>
                   <input
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    type={gmailField ? 'email' : 'text'}
                     autoComplete="username"
+                    autoCapitalize="none"
                     required
-                    maxLength={60}
+                    maxLength={gmailField ? 160 : 60}
                   />
                 </label>
                 <label className="field">
@@ -177,8 +214,10 @@ export function Login() {
                   </div>
                   {mode === 'register' && (
                     <small>
-                      {passwordHint} Tên đăng nhập dùng chữ thường, số, dấu chấm, gạch dưới hoặc
-                      gạch ngang.
+                      {passwordHint}{' '}
+                      {gmailEnabled
+                        ? 'Mỗi Gmail chỉ đăng ký được một tài khoản.'
+                        : 'Tên đăng nhập dùng chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.'}
                     </small>
                   )}
                 </label>
@@ -188,16 +227,45 @@ export function Login() {
                   </div>
                 )}
                 <Button type="submit" busy={busy}>
-                  {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản & đăng nhập'}
+                  {mode === 'login'
+                    ? 'Đăng nhập'
+                    : gmailEnabled
+                      ? 'Gửi mã xác minh'
+                      : 'Tạo tài khoản & đăng nhập'}
                   <ArrowRight size={17} />
                 </Button>
               </form>
-              <GoogleSignIn from={(location.state as { from?: string } | null)?.from} busy={busy} />
+              {options.data?.google && (
+                <GoogleSignIn
+                  from={(location.state as { from?: string } | null)?.from}
+                  busy={busy}
+                />
+              )}
+              {mode === 'login' && gmailEnabled && (
+                <div className="login-switch">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setLegacy(!legacy);
+                      setUsername('');
+                      setPassword('');
+                      setError('');
+                    }}
+                  >
+                    {legacy ? 'Đăng nhập bằng Gmail' : 'Đăng nhập nhân viên hoặc tài khoản cũ'}
+                  </button>
+                </div>
+              )}
               <div className="login-switch">
                 {mode === 'login' ? 'Bạn chưa có tài khoản?' : 'Bạn đã có tài khoản?'}{' '}
                 <button
+                  disabled={busy}
                   onClick={() => {
                     setMode(mode === 'login' ? 'register' : 'login');
+                    setLegacy(false);
+                    setUsername('');
+                    setPassword('');
                     setError('');
                   }}
                 >
@@ -212,6 +280,7 @@ export function Login() {
                     aria-label="Chọn tài khoản dùng thử"
                     defaultValue=""
                     onChange={(e) => {
+                      setLegacy(true);
                       setUsername(e.target.value);
                       setPassword('XuanNhaDev!2026');
                     }}

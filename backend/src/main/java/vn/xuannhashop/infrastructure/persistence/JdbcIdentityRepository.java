@@ -2,6 +2,7 @@ package vn.xuannhashop.infrastructure.persistence;
 import java.util.*;
 import org.springframework.stereotype.Repository;
 import vn.xuannhashop.business.identity.application.IdentityRepository;
+import vn.xuannhashop.business.identity.application.IdentityApplication.LoginIdentity;
 import vn.xuannhashop.business.identity.domain.*;
 import static vn.xuannhashop.infrastructure.persistence.Sql.p;
 @Repository
@@ -10,6 +11,33 @@ public class JdbcIdentityRepository implements IdentityRepository {
     private UserAccount account(Map<String,Object> r){return new UserAccount((UUID)r.get("id"),(String)r.get("username"),(String)r.get("display_name"),(String)r.get("role"),(UUID)r.get("customer_id"),(Boolean)r.get("enabled"));}
     private Customer person(Map<String,Object> r){return new Customer((UUID)r.get("id"),(String)r.get("name"),(String)r.get("phone"),(String)r.get("email"),(String)r.get("address"));}
     public Credentials find(String username){var r=s.one("select * from user_account where username=:u",p("u",username));return r==null?null:new Credentials(account(r),(String)r.get("password_hash"));}
+    public Credentials findByLoginGmail(String gmail) {
+        var row = s.one("select * from user_account where login_gmail=:gmail", p("gmail", gmail));
+        return row == null ? null : new Credentials(account(row), (String) row.get("password_hash"));
+    }
+
+    public LoginIdentity loginIdentity(String username) {
+        return loginIdentity(s.one("select * from user_account where username=:value", p("value", username)));
+    }
+
+    public LoginIdentity loginIdentity(UUID accountId) {
+        return loginIdentity(s.one("select * from user_account where id=:value", p("value", accountId)));
+    }
+
+    private LoginIdentity loginIdentity(Map<String,Object> row) {
+        return row == null ? null : new LoginIdentity(account(row), (String) row.get("login_gmail"));
+    }
+
+    public void lockGmail(String gmail) {
+        s.rows("select pg_advisory_xact_lock(hashtextextended(:value, 0))", p("value", "gmail-login:" + gmail));
+    }
+
+    public boolean assignGmail(UUID id, String gmail) {
+        return s.update("""
+            update user_account set login_gmail=:gmail
+            where id=:id and enabled and role='CUSTOMER' and login_gmail is null
+            """, p("id", id, "gmail", gmail)) == 1;
+    }
     public UserAccount findByGoogleSubject(String subject) {
         var row = s.one("""
             select u.* from google_customer_identity g

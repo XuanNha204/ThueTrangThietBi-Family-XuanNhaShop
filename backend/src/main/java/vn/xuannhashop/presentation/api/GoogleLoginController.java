@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,7 +25,7 @@ import vn.xuannhashop.business.shared.DomainException;
 
 @RestController
 @RequestMapping("/api/auth/google")
-@ConditionalOnProperty(name = "app.google.enabled", havingValue = "true")
+@ConditionalOnExpression("${app.google.enabled:false} && !${app.gmail.enabled:false}")
 class GoogleLoginController implements AuthenticationSuccessHandler, AuthenticationFailureHandler {
     private static final String PENDING = GoogleLoginController.class.getName() + ".pending";
     private static final Duration PENDING_LIFETIME = Duration.ofMinutes(10);

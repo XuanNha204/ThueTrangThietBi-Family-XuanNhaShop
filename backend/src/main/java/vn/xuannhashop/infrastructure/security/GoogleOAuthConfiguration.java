@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -34,7 +34,7 @@ import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.web.client.RestClient;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(name = "app.google.enabled", havingValue = "true")
+@ConditionalOnExpression("${app.google.enabled:false} && !${app.gmail.enabled:false}")
 class GoogleOAuthConfiguration {
     static final String START_BASE = "/api/auth/authorize";
     static final String CALLBACK = "/api/auth/google/callback";

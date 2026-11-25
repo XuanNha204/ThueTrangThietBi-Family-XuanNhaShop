@@ -21,6 +21,67 @@ public class IdentityService implements IdentityApplication {
         repository.addAccount(new UserAccount(id,username,c.name(),"CUSTOMER",c.id(),true),passwordHash);return id;
     }
     @Override
+    public LoginIdentity loginIdentity(String username) {
+        var result = repository.loginIdentity(username);
+        if (result == null || !result.account().enabled()) throw new DomainException(401, "Tài khoản không thể đăng nhập.");
+        return result;
+    }
+
+    @Override
+    public void ensureGmailAvailable(String gmail) {
+        if (repository.findByLoginGmail(GmailAddress.required(gmail)) != null) {
+            throw DomainException.conflict("Gmail này đã được đăng ký. Hãy chuyển sang đăng nhập.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public UserAccount registerGmail(String input, String passwordHash, String name, String phone, String address) {
+        String gmail = GmailAddress.required(input);
+        var contact = validated(name, phone, address);
+        repository.lockGmail(gmail);
+        ensureGmailAvailable(gmail);
+        repository.addCustomer(new Customer(contact.id(), contact.name(), contact.phone(), gmail, contact.address()));
+        UUID accountId = UUID.randomUUID();
+        var account = new UserAccount(accountId, "gmail-" + accountId, contact.name(), "CUSTOMER", contact.id(), true);
+        repository.addAccount(account, passwordHash);
+        if (!repository.assignGmail(account.id(), gmail)) throw DomainException.conflict("Không thể tạo tài khoản Gmail.");
+        audit.system("GMAIL_CUSTOMER_REGISTERED", account.id(), "Tạo khách thuê sau khi xác minh Gmail.");
+        return account;
+    }
+
+    @Override
+    @Transactional
+    public UserAccount enrollGmail(UUID accountId, String input) {
+        String gmail = GmailAddress.required(input);
+        repository.lockGmail(gmail);
+        var current = activeCustomer(accountId);
+        if (gmail.equals(current.gmail())) return current.account();
+        ensureGmailAvailable(gmail);
+        if (!repository.assignGmail(accountId, gmail)) {
+            throw DomainException.conflict("Tài khoản đã được gắn Gmail. Hãy đăng nhập lại.");
+        }
+        audit.system("GMAIL_CUSTOMER_ENROLLED", accountId, "Xác minh Gmail cho tài khoản khách hiện có.");
+        return current.account();
+    }
+
+    @Override
+    public UserAccount gmailLogin(UUID accountId, String gmail) {
+        var current = activeCustomer(accountId);
+        if (!gmail.equals(current.gmail())) throw new DomainException(401, "Tài khoản đã thay đổi. Hãy đăng nhập lại.");
+        return current.account();
+    }
+
+    private LoginIdentity activeCustomer(UUID accountId) {
+        var current = repository.loginIdentity(accountId);
+        if (current == null || !current.account().enabled() || !"CUSTOMER".equals(current.account().role())
+                || current.account().customerId() == null) {
+            throw new DomainException(401, "Tài khoản khách thuê không thể đăng nhập.");
+        }
+        return current;
+    }
+
+    @Override
     public UserAccount googleAccount(String subject) {
         UserAccount account = repository.findByGoogleSubject(Checks.text(subject, 255, "Danh tính Google"));
         if (account != null && (!account.enabled() || !"CUSTOMER".equals(account.role()) || account.customerId() == null)) {

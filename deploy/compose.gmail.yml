@@ -1,0 +1,22 @@
+services:
+  backend:
+    environment:
+      GMAIL_LOGIN_ENABLED: "true"
+      APP_GMAIL_SMTP_ENABLED: "true"
+      GOOGLE_OAUTH_ENABLED: "false"
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: "587"
+    secrets:
+      - source: gmail_smtp_user
+        target: spring.mail.username
+      - source: gmail_smtp_password
+        target: spring.mail.password
+      - source: gmail_otp_key
+        target: app.gmail.otp-key
+secrets:
+  gmail_smtp_user:
+    file: ./secrets/gmail_smtp_user
+  gmail_smtp_password:
+    file: ./secrets/gmail_smtp_password
+  gmail_otp_key:
+    file: ./secrets/gmail_otp_key
