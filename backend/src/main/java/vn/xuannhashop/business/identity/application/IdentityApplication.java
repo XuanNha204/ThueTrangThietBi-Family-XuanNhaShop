@@ -14,6 +14,9 @@ public interface IdentityApplication {
     record GoogleProfile(String subject, String email, String name) {}
     UserAccount googleAccount(String subject);
     UserAccount registerGoogle(GoogleProfile profile, String name, String phone, String address);
+    record GoogleContact(String name, String phone, String address) {}
+    UserAccount googleGmailAccount(GoogleProfile profile);
+    UserAccount verifyGoogleGmail(GoogleProfile profile, UUID expected, GoogleContact contact);
     void enable(UUID id,boolean enabled);
     record Profile(String name,String phone,String email,String address,long version) {}
     Profile profile();

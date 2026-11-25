@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties = {
-    "app.jobs-enabled=false", "app.gmail.enabled=true", "app.google.enabled=true",
+    "app.jobs-enabled=false", "app.gmail.enabled=true", "app.google.enabled=false",
     "app.gmail.otp-key=test-key-for-gmail-integration-tests-only"
 })
 @AutoConfigureMockMvc

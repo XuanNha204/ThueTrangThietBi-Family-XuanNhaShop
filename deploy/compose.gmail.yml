@@ -3,7 +3,6 @@ services:
     environment:
       GMAIL_LOGIN_ENABLED: "true"
       APP_GMAIL_SMTP_ENABLED: "true"
-      GOOGLE_OAUTH_ENABLED: "false"
       SPRING_MAIL_HOST: smtp.gmail.com
       SPRING_MAIL_PORT: "587"
     secrets:

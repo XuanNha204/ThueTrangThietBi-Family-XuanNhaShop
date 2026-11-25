@@ -46,6 +46,11 @@ public class JdbcIdentityRepository implements IdentityRepository {
             """, p("subject", subject));
         return row == null ? null : account(row);
     }
+
+    public String googleSubjectOf(UUID accountId) {
+        var row = s.one("select subject from google_customer_identity where account_id=:id", p("id", accountId));
+        return row == null ? null : (String) row.get("subject");
+    }
     public void lockGoogleSubject(String subject) {
         s.rows("select pg_advisory_xact_lock(hashtextextended(:key, 0))", p("key", "google-identity:" + subject));
     }

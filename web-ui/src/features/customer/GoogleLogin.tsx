@@ -5,6 +5,7 @@ import { clearCsrf, request } from '../../shared/api';
 import { useApp, useQuery } from '../../shared/state';
 import type { User } from '../../shared/types';
 import { Button, Loading } from '../../shared/ui';
+import type { GmailStage } from './GmailVerification';
 import googleMark from './google-mark.png';
 
 const RETURN_PATH = 'xuannhashop.google.return';
@@ -22,9 +23,6 @@ function customerDestination(target: string | null) {
 }
 
 export function GoogleSignIn({ from, busy }: { from?: string; busy: boolean }) {
-  const options = useQuery<{ google: boolean }>('/auth/options');
-  if (!options.data?.google) return null;
-
   function rememberDestination(event: MouseEvent<HTMLAnchorElement>) {
     if (busy) {
       event.preventDefault();
@@ -53,7 +51,23 @@ export function GoogleSignIn({ from, busy }: { from?: string; busy: boolean }) {
   );
 }
 
-export function GoogleLoginContinuation({ phase }: { phase: 'setup' | 'success' }) {
+export function takeGoogleDestination() {
+  try {
+    const target = sessionStorage.getItem(RETURN_PATH);
+    sessionStorage.removeItem(RETURN_PATH);
+    return customerDestination(target);
+  } catch {
+    return '/my-rentals';
+  }
+}
+
+export function GoogleLoginContinuation({
+  phase,
+  onOtp,
+}: {
+  phase: 'setup' | 'success';
+  onOtp?: (stage: GmailStage) => void;
+}) {
   const { setUser } = useApp();
   const navigate = useNavigate();
   const profile = useQuery<GoogleContact>(phase === 'setup' ? '/auth/google/pending' : null);
@@ -63,16 +77,9 @@ export function GoogleLoginContinuation({ phase }: { phase: 'setup' | 'success' 
 
   const finish = useCallback(
     (user: User) => {
-      let target: string | null = null;
-      try {
-        target = sessionStorage.getItem(RETURN_PATH);
-        sessionStorage.removeItem(RETURN_PATH);
-      } catch {
-        // Use the customer's rental list if session storage is unavailable.
-      }
       clearCsrf();
       setUser(user);
-      navigate(customerDestination(target), { replace: true });
+      navigate(takeGoogleDestination(), { replace: true });
     },
     [navigate, setUser],
   );
@@ -87,12 +94,12 @@ export function GoogleLoginContinuation({ phase }: { phase: 'setup' | 'success' 
     setError('');
     const form = new FormData(event.currentTarget);
     try {
-      finish(
-        await request<User>('/auth/google/complete', {
-          method: 'POST',
-          body: { name: form.get('name'), phone: form.get('phone'), address: form.get('address') },
-        }),
-      );
+      const result = await request<User | GmailStage>('/auth/google/complete', {
+        method: 'POST',
+        body: { name: form.get('name'), phone: form.get('phone'), address: form.get('address') },
+      });
+      if ('stage' in result) onOtp?.(result);
+      else finish(result);
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -158,7 +165,7 @@ export function GoogleLoginContinuation({ phase }: { phase: 'setup' | 'success' 
               </div>
             )}
             <Button type="submit" busy={busy}>
-              Lưu và đăng nhập
+              {onOtp ? 'Gửi mã xác minh' : 'Lưu và đăng nhập'}
             </Button>
             {!busy && (
               <Link className="text-link" to="/login" replace>

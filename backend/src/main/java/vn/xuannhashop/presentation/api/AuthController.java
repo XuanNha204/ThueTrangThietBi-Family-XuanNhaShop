@@ -21,7 +21,7 @@ public class AuthController {
                    PasswordEncoder encoder, @Value("${app.google.enabled:false}") boolean googleEnabled,
                    ObjectProvider<GmailLoginFlow> gmail) {
         this.manager=manager;this.sessions=sessions;this.identity=identity;this.encoder=encoder;
-        this.gmail=gmail.getIfAvailable();this.googleEnabled=googleEnabled && this.gmail==null;
+        this.gmail=gmail.getIfAvailable();this.googleEnabled=googleEnabled;
     }
     record Login(@NotBlank @Size(max=160)String username,@NotBlank @Size(max=100)String password) {}
     record Register(@Size(max=60)String username,@Size(max=160)String email,@NotBlank @Size(min=8,max=72)String password,

@@ -41,12 +41,17 @@ public class IdentityService implements IdentityApplication {
         var contact = validated(name, phone, address);
         repository.lockGmail(gmail);
         ensureGmailAvailable(gmail);
+        var account = createGmailAccount(gmail, passwordHash, contact);
+        audit.system("GMAIL_CUSTOMER_REGISTERED", account.id(), "Tạo khách thuê sau khi xác minh Gmail.");
+        return account;
+    }
+
+    private UserAccount createGmailAccount(String gmail, String passwordHash, Customer contact) {
         repository.addCustomer(new Customer(contact.id(), contact.name(), contact.phone(), gmail, contact.address()));
         UUID accountId = UUID.randomUUID();
         var account = new UserAccount(accountId, "gmail-" + accountId, contact.name(), "CUSTOMER", contact.id(), true);
         repository.addAccount(account, passwordHash);
         if (!repository.assignGmail(account.id(), gmail)) throw DomainException.conflict("Không thể tạo tài khoản Gmail.");
-        audit.system("GMAIL_CUSTOMER_REGISTERED", account.id(), "Tạo khách thuê sau khi xác minh Gmail.");
         return account;
     }
 
@@ -84,10 +89,60 @@ public class IdentityService implements IdentityApplication {
     @Override
     public UserAccount googleAccount(String subject) {
         UserAccount account = repository.findByGoogleSubject(Checks.text(subject, 255, "Danh tính Google"));
+        requireGoogleCustomer(account);
+        return account;
+    }
+
+    private void requireGoogleCustomer(UserAccount account) {
         if (account != null && (!account.enabled() || !"CUSTOMER".equals(account.role()) || account.customerId() == null)) {
             throw new DomainException(403, "Tài khoản khách thuê không thể đăng nhập.");
         }
-        return account;
+    }
+
+    @Override
+    public UserAccount googleGmailAccount(GoogleProfile profile) {
+        String gmail = GmailAddress.required(profile.email());
+        UserAccount linked = googleAccount(profile.subject());
+        var credentials = repository.findByLoginGmail(gmail);
+        UserAccount gmailOwner = credentials == null ? null : credentials.account();
+        requireGoogleCustomer(gmailOwner);
+        if (linked != null) {
+            var identity = activeCustomer(linked.id());
+            if ((identity.gmail() != null && !gmail.equals(identity.gmail()))
+                    || (gmailOwner != null && !linked.id().equals(gmailOwner.id()))) {
+                throw DomainException.conflict("Gmail này không khớp với tài khoản Google đã liên kết.");
+            }
+            return linked;
+        }
+        if (gmailOwner != null && repository.googleSubjectOf(gmailOwner.id()) != null) {
+            throw DomainException.conflict("Gmail này đã được liên kết với tài khoản Google khác.");
+        }
+        return gmailOwner;
+    }
+
+    @Override
+    @Transactional
+    public UserAccount verifyGoogleGmail(GoogleProfile profile, UUID expected, GoogleContact contact) {
+        String subject = Checks.text(profile.subject(), 255, "Danh tính Google");
+        String gmail = GmailAddress.required(profile.email());
+        repository.lockGoogleSubject(subject);
+        repository.lockGmail(gmail);
+        UserAccount account = googleGmailAccount(profile);
+        if (expected != null && (account == null || !expected.equals(account.id()))) {
+            throw DomainException.conflict("Tài khoản đã thay đổi. Hãy đăng nhập bằng Google lại.");
+        }
+        if (account == null) {
+            if (contact == null) throw DomainException.conflict("Hãy bổ sung hồ sơ để đăng ký bằng Google.");
+            account = createGmailAccount(gmail, null, validated(contact.name(), contact.phone(), contact.address()));
+            audit.system("GOOGLE_CUSTOMER_REGISTERED", account.id(), "Tạo tài khoản sau xác thực Google và mã Gmail.");
+        } else if (activeCustomer(account.id()).gmail() == null && !repository.assignGmail(account.id(), gmail)) {
+            throw DomainException.conflict("Không thể liên kết Gmail. Hãy đăng nhập bằng Google lại.");
+        }
+        if (repository.googleSubjectOf(account.id()) == null) {
+            repository.bindGoogleSubject(subject, account.id());
+            audit.system("GOOGLE_CUSTOMER_LINKED", account.id(), "Liên kết Google sau khi xác minh mã Gmail.");
+        }
+        return activeCustomer(account.id()).account();
     }
 
     @Override

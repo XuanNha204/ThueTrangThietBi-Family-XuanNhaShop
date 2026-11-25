@@ -28,12 +28,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
@@ -44,7 +46,9 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -168,7 +172,11 @@ class GoogleLoginTest {
     }
 
     private Flow begin() throws Exception {
-        var started = mvc.perform(get("/api/auth/authorize/google"))
+        return begin(mvc);
+    }
+
+    private Flow begin(MockMvc client) throws Exception {
+        var started = client.perform(get("/api/auth/authorize/google"))
             .andExpect(status().isFound()).andReturn();
         var url = URI.create(started.getResponse().getRedirectedUrl());
         assertThat(url.getPath()).isEqualTo("/authorize");
@@ -180,11 +188,136 @@ class GoogleLoginTest {
 
     private void accept(Flow flow, String subject, String email, boolean verified, String nonce, String landing)
             throws Exception {
+        accept(mvc, flow, subject, email, verified, nonce, landing);
+    }
+
+    private void accept(MockMvc client, Flow flow, String subject, String email, boolean verified, String nonce, String landing)
+            throws Exception {
         String code = UUID.randomUUID().toString();
         PROVIDER.grants.put(code, new Grant(subject, email, verified, nonce, flow.query().get("code_challenge")));
-        mvc.perform(get(CALLBACK).param("state", flow.query().get("state")).param("code", code).session(flow.session()))
+        client.perform(get(CALLBACK).param("state", flow.query().get("state")).param("code", code).session(flow.session()))
             .andExpect(status().isFound()).andExpect(redirectedUrl(landing));
         assertThat(PROVIDER.grants).doesNotContainKey(code);
+    }
+
+    @Nested
+    @TestPropertySource(properties = {
+        "app.gmail.enabled=true", "app.gmail.otp-key=test-key-for-combined-login-tests-only"
+    })
+    @Import({ProviderConfiguration.class, GmailLoginTest.MailFixture.class})
+    class WithGmailVerification {
+        @Autowired MockMvc client;
+        @Autowired GmailLoginTest.Mailbox mailbox;
+
+        @Test
+        void googleSignupAndEveryGoogleSignInWaitForCode() throws Exception {
+            String subject = UUID.randomUUID().toString();
+            String email = inbox();
+            client.perform(get("/api/auth/options"))
+                .andExpect(jsonPath("$.google").value(true)).andExpect(jsonPath("$.gmail").value(true));
+            var first = begin(client);
+            accept(client, first, subject, email, true, first.query().get("nonce"), "/login?google=setup");
+            client.perform(get(TASK + "/pending").session(first.session())).andExpect(jsonPath("$.email").value(email));
+            unsigned(first);
+            client.perform(post(TASK + "/complete").session(first.session()).with(csrf())
+                .contentType("application/json").content(DETAILS)).andExpect(jsonPath("$.stage").value("otp"));
+            unsigned(first);
+            assertThat(count(email)).isZero();
+            var signup = verify(first, code(email)).andExpect(status().isOk()).andReturn();
+            String account = json.readTree(signup.getResponse().getContentAsString()).get("id").asText();
+            assertThat(count(email)).isEqualTo(1);
+            verify(first, code(email)).andExpect(status().isBadRequest());
+            client.perform(post("/api/auth/register").with(csrf()).contentType("application/json").content(json.writeValueAsString(
+                Map.of("email", email, "password", "Example!200", "name", "Khách", "phone", "0901234567", "address", "Địa chỉ"))))
+                .andExpect(status().isConflict());
+
+            db.update("update gmail_mail_limit set last_sent=now()-interval '61 seconds'");
+            var again = begin(client);
+            accept(client, again, subject, email, true, again.query().get("nonce"), "/login?google=otp");
+            unsigned(again);
+            client.perform(get("/api/auth/otp/state").session(again.session())).andExpect(jsonPath("$.stage").value("otp"));
+            client.perform(post(TASK + "/complete").session(again.session()).with(csrf())
+                .contentType("application/json").content(DETAILS)).andExpect(status().isBadRequest());
+            String actual = code(email);
+            verify(again, "000000".equals(actual) ? "000001" : "000000").andExpect(status().isBadRequest());
+            unsigned(again);
+            verify(again, actual).andExpect(jsonPath("$.id").value(account));
+            client.perform(get("/api/auth/me").session(again.session())).andExpect(jsonPath("$.id").value(account));
+        }
+
+        @Test
+        void googleUsesSameGmailAccountAndKeepsThePasswordLogin() throws Exception {
+            String subject = UUID.randomUUID().toString();
+            String email = inbox();
+            String alias = "TE.ST." + email.substring(4).replace("@", "+rental@");
+            UUID customer = UUID.randomUUID();
+            UUID account = UUID.randomUUID();
+            db.update("insert into customer(id,name,phone,address) values (?, 'Khách cũ', '0901234567', 'Hồ sơ cũ')", customer);
+            db.update("""
+                insert into user_account(id,username,password_hash,display_name,role,customer_id,login_gmail)
+                values (?, ?, ?, 'Khách cũ', 'CUSTOMER', ?, ?)
+                """, account, "local-" + account, passwords.encode("Example!200"), customer, email);
+
+            var flow = begin(client);
+            accept(client, flow, subject, alias, true, flow.query().get("nonce"), "/login?google=otp");
+            unsigned(flow);
+            assertThat(db.queryForObject("select count(*) from google_customer_identity where subject=?", Integer.class, subject))
+                .isZero();
+            verify(flow, code(email)).andExpect(jsonPath("$.id").value(account.toString()))
+                .andExpect(jsonPath("$.customerId").value(customer.toString()));
+            assertThat(count(email)).isEqualTo(1);
+            assertThat(db.queryForObject("select account_id from google_customer_identity where subject=?", UUID.class, subject))
+                .isEqualTo(account);
+
+            var different = begin(client);
+            accept(client, different, UUID.randomUUID().toString(), email, true, different.query().get("nonce"),
+                "/login?google=failed");
+            unsigned(different);
+            var passwordSession = new MockHttpSession();
+            db.update("update gmail_mail_limit set last_sent=now()-interval '61 seconds'");
+            client.perform(post("/api/auth/login").session(passwordSession).with(csrf()).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("username", email, "password", "Example!200"))))
+                .andExpect(jsonPath("$.stage").value("otp"));
+            client.perform(get("/api/auth/me").session(passwordSession)).andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void googleRequiresAVerifiedGmail() throws Exception {
+            var otherDomain = begin(client);
+            accept(client, otherDomain, UUID.randomUUID().toString(), "rental@example.test", true,
+                otherDomain.query().get("nonce"), "/login?google=gmail-required");
+            unsigned(otherDomain);
+            String email = inbox();
+            var unverified = begin(client);
+            accept(client, unverified, UUID.randomUUID().toString(), email, false,
+                unverified.query().get("nonce"), "/login?google=failed");
+            unsigned(unverified);
+            assertThat(mailbox.codes).doesNotContainKey(email);
+            assertThat(count(email)).isZero();
+        }
+
+        private void unsigned(Flow flow) throws Exception {
+            client.perform(get("/api/auth/me").session(flow.session())).andExpect(status().isUnauthorized());
+        }
+
+        private ResultActions verify(Flow flow, String code) throws Exception {
+            return client.perform(post("/api/auth/otp/verify").session(flow.session()).with(csrf())
+                .contentType("application/json").content(json.writeValueAsString(Map.of("code", code))));
+        }
+
+        private String inbox() {
+            return "test" + UUID.randomUUID().toString().replace("-", "") + "@gmail.com";
+        }
+
+        private int count(String email) {
+            return db.queryForObject("select count(*) from user_account where login_gmail=?", Integer.class, email);
+        }
+
+        private String code(String email) {
+            String code = mailbox.codes.get(email);
+            assertThat(code).matches("[0-9]{6}");
+            return code;
+        }
     }
 
     private static Map<String, String> parameters(String form) {

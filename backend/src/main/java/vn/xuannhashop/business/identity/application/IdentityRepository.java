@@ -10,6 +10,7 @@ public interface IdentityRepository {
     void lockGmail(String gmail);
     boolean assignGmail(UUID account, String gmail);
     UserAccount findByGoogleSubject(String subject);
+    String googleSubjectOf(UUID accountId);
     void lockGoogleSubject(String subject);
     void bindGoogleSubject(String subject, UUID account);
     List<Customer> customers();

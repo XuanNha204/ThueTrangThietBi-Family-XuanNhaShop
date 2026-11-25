@@ -10,9 +10,18 @@ import { useApp, useQuery } from '../../shared/state';
 import type { User } from '../../shared/types';
 import { staffNavigation } from '../staff/Shell';
 import { passwordHint, passwordPattern } from '../../shared/password';
-import { GoogleLoginContinuation, GoogleSignIn } from './GoogleLogin';
+import { GoogleLoginContinuation, GoogleSignIn, takeGoogleDestination } from './GoogleLogin';
 import { GmailVerification } from './GmailVerification';
 import type { GmailStage } from './GmailVerification';
+
+const googleErrors: Record<string, string> = {
+  blocked: 'Tài khoản khách thuê đang bị khóa. Hãy liên hệ cửa hàng để được hỗ trợ.',
+  failed: 'Đăng nhập Google chưa hoàn tất. Bạn có thể thử lại.',
+  'gmail-required': 'Vui lòng chọn tài khoản Google có địa chỉ @gmail.com.',
+  limited: 'Mã vừa được gửi hoặc bạn đã đạt giới hạn gửi mã. Hãy đợi trước khi thử lại.',
+  'mail-failed': 'Chưa gửi được mã xác minh. Hãy thử đăng nhập lại sau.',
+};
+
 export function Login() {
   const { setUser } = useApp();
   const navigate = useNavigate(),
@@ -25,10 +34,10 @@ export function Login() {
   const stage = stageOverride ?? pending.data;
   const google = options.data?.google ? new URLSearchParams(location.search).get('google') : null;
   const googleError =
-    google === 'blocked'
-      ? 'Tài khoản khách thuê đang bị khóa. Hãy liên hệ cửa hàng để được hỗ trợ.'
-      : google === 'failed'
-        ? 'Đăng nhập Google chưa hoàn tất. Bạn có thể thử lại.'
+    google === 'otp' && stage?.stage === 'none'
+      ? 'Phiên xác minh đã hết hạn. Hãy đăng nhập bằng Google lại.'
+      : google && Object.hasOwn(googleErrors, google)
+        ? googleErrors[google]
         : '';
   const [mode, setMode] = useState<'login' | 'register'>('login'),
     [username, setUsername] = useState(''),
@@ -41,7 +50,10 @@ export function Login() {
   function finishLogin(u: User) {
     clearCsrf();
     setUser(u);
-    const target = (location.state as { from?: string } | null)?.from;
+    const target =
+      google === 'otp' || google === 'setup'
+        ? takeGoogleDestination()
+        : (location.state as { from?: string } | null)?.from;
     const path = target?.split('?')[0] ?? '';
     const destinationRoles = staffNavigation.find(
       (item) => item.path !== '/app' && (path === item.path || path.startsWith(item.path + '/')),
@@ -65,6 +77,14 @@ export function Login() {
     setPassword('');
     setShow(false);
     setStage(next);
+  }
+
+  function updateVerification(next: GmailStage) {
+    setStage(next);
+    if (next.stage === 'none' && (google === 'otp' || google === 'setup')) {
+      takeGoogleDestination();
+      navigate('/login', { replace: true });
+    }
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -134,9 +154,17 @@ export function Login() {
               {options.error || pending.error}
             </div>
           ) : stage && stage.stage !== 'none' ? (
-            <GmailVerification stage={stage} onChange={setStage} onVerified={finishLogin} />
+            <GmailVerification
+              stage={stage}
+              onChange={updateVerification}
+              onVerified={finishLogin}
+            />
           ) : google === 'setup' || google === 'success' ? (
-            <GoogleLoginContinuation key={google} phase={google} />
+            <GoogleLoginContinuation
+              key={google}
+              phase={google}
+              onOtp={gmailEnabled ? continueVerification : undefined}
+            />
           ) : (
             <>
               <h1>{mode === 'login' ? 'Chào bạn,' : 'Tạo tài khoản thuê'}</h1>

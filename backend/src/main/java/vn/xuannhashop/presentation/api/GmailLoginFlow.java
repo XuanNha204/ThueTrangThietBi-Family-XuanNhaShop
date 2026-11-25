@@ -34,31 +34,39 @@ class GmailLoginFlow {
         this.sessions = sessions;
     }
 
-    enum Action { LOGIN, REGISTER, ENROLL }
+    enum Action { LOGIN, REGISTER, ENROLL, GOOGLE }
     record Status(String stage, String emailHint, long expiresIn, long resendAfter) {}
     record Verification(@NotBlank @Pattern(regexp = "[0-9]{6}") String code) {}
     record Enrollment(@NotBlank @Size(max = 160) String email) {}
     record Contact(String passwordHash, String name, String phone, String address) {}
-    private record Pending(UUID id, Action action, UUID account, String gmail, Contact contact, Instant deadline, Instant issuedAt) {}
+    private record Pending(UUID id, Action action, UUID account, String gmail, Contact contact,
+                           IdentityApplication.GoogleProfile google, Instant deadline, Instant issuedAt) {}
 
     Status login(IdentityApplication.LoginIdentity account, String identifier,
                  HttpServletRequest req, HttpServletResponse res) {
         var recognized = account.account();
         Instant deadline = Instant.now().plusSeconds(900);
         if (account.gmail() == null) {
-            return begin(new Pending(UUID.randomUUID(), Action.ENROLL, recognized.id(), null, null, deadline, null), req, res);
+            return begin(new Pending(UUID.randomUUID(), Action.ENROLL, recognized.id(), null, null, null, deadline, null), req, res);
         }
         if (!account.gmail().equals(identifier)) {
             throw DomainException.bad("Hãy dùng Gmail đã xác minh để đăng nhập.");
         }
-        return begin(new Pending(UUID.randomUUID(), Action.LOGIN, recognized.id(), account.gmail(), null, deadline, null), req, res);
+        return begin(new Pending(UUID.randomUUID(), Action.LOGIN, recognized.id(), account.gmail(), null, null, deadline, null), req, res);
     }
 
     Status registration(String email, Contact contact, HttpServletRequest req, HttpServletResponse res) {
         String gmail = GmailAddress.required(email);
         identity.ensureGmailAvailable(gmail);
-        return begin(new Pending(UUID.randomUUID(), Action.REGISTER, null, gmail, contact,
+        return begin(new Pending(UUID.randomUUID(), Action.REGISTER, null, gmail, contact, null,
             Instant.now().plusSeconds(900), null), req, res);
+    }
+
+    Status google(IdentityApplication.GoogleProfile profile, UserAccount account, Contact contact,
+                  HttpServletRequest req, HttpServletResponse res) {
+        String gmail = GmailAddress.required(profile.email());
+        return begin(new Pending(UUID.randomUUID(), Action.GOOGLE, account == null ? null : account.id(), gmail,
+            contact, profile, Instant.now().plusSeconds(900), null), req, res);
     }
 
     @GetMapping("/state")
@@ -76,7 +84,8 @@ class GmailLoginFlow {
         }
         String email = GmailAddress.required(input.email());
         identity.ensureGmailAvailable(email);
-        return store(issue(new Pending(UUID.randomUUID(), pending.action(), pending.account(), email, null, pending.deadline(), null)), req);
+        return store(issue(new Pending(UUID.randomUUID(), pending.action(), pending.account(), email, null, null,
+            pending.deadline(), null)), req);
     }
 
     @PostMapping("/resend")
@@ -98,6 +107,11 @@ class GmailLoginFlow {
             case REGISTER -> {
                 var contact = pending.contact();
                 yield identity.registerGmail(pending.gmail(), contact.passwordHash(), contact.name(), contact.phone(), contact.address());
+            }
+            case GOOGLE -> {
+                var contact = pending.contact();
+                var details = contact == null ? null : new IdentityApplication.GoogleContact(contact.name(), contact.phone(), contact.address());
+                yield identity.verifyGoogleGmail(pending.google(), pending.account(), details);
             }
         };
         sessions.start(account, req, res);
@@ -121,7 +135,7 @@ class GmailLoginFlow {
         if (status(pending).resendAfter() > 0) throw new DomainException(429, "Chưa đến thời điểm gửi lại mã.");
         codes.send(pending.id(), pending.gmail());
         return new Pending(pending.id(), pending.action(), pending.account(), pending.gmail(), pending.contact(),
-            pending.deadline(), Instant.now());
+            pending.google(), pending.deadline(), Instant.now());
     }
 
     private Status store(Pending pending, HttpServletRequest req) {
