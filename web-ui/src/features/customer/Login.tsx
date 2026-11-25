@@ -4,15 +4,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { Brand } from './Catalog';
 import { DeviceArt } from '../../shared/DeviceArt';
-import { Button, Loading } from '../../shared/ui';
+import { Button, InfoNote, Loading } from '../../shared/ui';
 import { request, clearCsrf, roles } from '../../shared/api';
 import { useApp, useQuery } from '../../shared/state';
 import type { User } from '../../shared/types';
 import { staffNavigation } from '../staff/Shell';
 import { passwordHint, passwordPattern } from '../../shared/password';
+import { passwordResetPath, passwordSavedNotice } from '../../shared/AccountPassword';
 import { GoogleLoginContinuation, GoogleSignIn, takeGoogleDestination } from './GoogleLogin';
 import { GmailVerification } from './GmailVerification';
 import type { GmailStage } from './GmailVerification';
+import { PasswordRecovery } from './PasswordRecovery';
 
 const googleErrors: Record<string, string> = {
   blocked: 'Tài khoản khách thuê đang bị khóa. Hãy liên hệ cửa hàng để được hỗ trợ.',
@@ -28,11 +30,14 @@ export function Login() {
     location = useLocation();
   const options = useQuery<{ gmail: boolean; google: boolean }>('/auth/options');
   const gmailEnabled = options.data?.gmail === true;
+  const view = new URLSearchParams(location.search);
+  const recovering = gmailEnabled && view.get('reset') === '1';
+  const notice = (location.state as { notice?: string } | null)?.notice;
   const pending = useQuery<GmailStage>(gmailEnabled ? '/auth/otp/state' : null);
   const [stageOverride, setStage] = useState<GmailStage | null>(null);
   const [legacy, setLegacy] = useState(false);
   const stage = stageOverride ?? pending.data;
-  const google = options.data?.google ? new URLSearchParams(location.search).get('google') : null;
+  const google = options.data?.google ? view.get('google') : null;
   const googleError =
     google === 'otp' && stage?.stage === 'none'
       ? 'Phiên xác minh đã hết hạn. Hãy đăng nhập bằng Google lại.'
@@ -85,6 +90,18 @@ export function Login() {
       takeGoogleDestination();
       navigate('/login', { replace: true });
     }
+  }
+
+  function finishRecovery() {
+    clearCsrf();
+    setUser(null);
+    setStage({ stage: 'none', emailHint: '', expiresIn: 0, resendAfter: 0 });
+    setMode('login');
+    setLegacy(false);
+    setPassword('');
+    setShow(false);
+    setError('');
+    navigate('/login', { replace: true, state: { notice: passwordSavedNotice } });
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -147,7 +164,9 @@ export function Login() {
         </Link>
         <div className="login-form">
           <div className="eyebrow">XuanNhaShop</div>
-          {options.loading || (gmailEnabled && !stage && !pending.error) ? (
+          {recovering ? (
+            <PasswordRecovery onComplete={finishRecovery} />
+          ) : options.loading || (gmailEnabled && !stage && !pending.error) ? (
             <Loading />
           ) : options.error || (gmailEnabled && pending.error && !stageOverride) ? (
             <div role="alert" className="inline-error">
@@ -173,6 +192,11 @@ export function Login() {
                   ? 'Đăng nhập để tiếp tục cùng XuanNha.'
                   : 'Lưu thông tin và theo dõi đơn thuê của bạn.'}
               </p>
+              {notice && (
+                <div role="status">
+                  <InfoNote>{notice}</InfoNote>
+                </div>
+              )}
               <form className="form-stack" onSubmit={submit}>
                 {googleError && !error && (
                   <div role="alert" className="inline-error">
@@ -249,6 +273,11 @@ export function Login() {
                     </small>
                   )}
                 </label>
+                {mode === 'login' && gmailEnabled && !legacy && (
+                  <Link to={passwordResetPath} className="text-link">
+                    Quên mật khẩu?
+                  </Link>
+                )}
                 {error && (
                   <div role="alert" className="inline-error">
                     {error}

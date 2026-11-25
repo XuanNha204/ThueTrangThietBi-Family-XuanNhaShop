@@ -10,10 +10,25 @@ public class JdbcIdentityRepository implements IdentityRepository {
     private final Sql s;public JdbcIdentityRepository(Sql s){this.s=s;}
     private UserAccount account(Map<String,Object> r){return new UserAccount((UUID)r.get("id"),(String)r.get("username"),(String)r.get("display_name"),(String)r.get("role"),(UUID)r.get("customer_id"),(Boolean)r.get("enabled"));}
     private Customer person(Map<String,Object> r){return new Customer((UUID)r.get("id"),(String)r.get("name"),(String)r.get("phone"),(String)r.get("email"),(String)r.get("address"));}
-    public Credentials find(String username){var r=s.one("select * from user_account where username=:u",p("u",username));return r==null?null:new Credentials(account(r),(String)r.get("password_hash"));}
+    public Credentials find(String username){return credentials(s.one("select * from user_account where username=:u",p("u",username)));}
     public Credentials findByLoginGmail(String gmail) {
         var row = s.one("select * from user_account where login_gmail=:gmail", p("gmail", gmail));
-        return row == null ? null : new Credentials(account(row), (String) row.get("password_hash"));
+        return credentials(row);
+    }
+
+    private Credentials credentials(Map<String,Object> row) {
+        return row == null ? null : new Credentials(account(row), (String) row.get("password_hash"), credentialVersion(row));
+    }
+
+    private long credentialVersion(Map<String,Object> row) {
+        return ((Number) row.get("credential_version")).longValue();
+    }
+
+    public boolean updatePassword(UUID account, long version, String hash) {
+        return s.update("""
+            update user_account set password_hash=:hash, credential_version=credential_version+1
+            where id=:id and enabled and credential_version=:version
+            """, p("id", account, "version", version, "hash", hash)) == 1;
     }
 
     public LoginIdentity loginIdentity(String username) {
@@ -25,7 +40,7 @@ public class JdbcIdentityRepository implements IdentityRepository {
     }
 
     private LoginIdentity loginIdentity(Map<String,Object> row) {
-        return row == null ? null : new LoginIdentity(account(row), (String) row.get("login_gmail"));
+        return row == null ? null : new LoginIdentity(account(row), (String) row.get("login_gmail"), credentialVersion(row));
     }
 
     public void lockGmail(String gmail) {

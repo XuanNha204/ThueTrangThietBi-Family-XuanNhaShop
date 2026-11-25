@@ -6,6 +6,7 @@ import type { User } from '../../shared/types';
 import { request } from '../../shared/api';
 import { useApp, useCommand, useQuery } from '../../shared/state';
 import { Button, InfoNote, PageHeader, Panel, QueryState } from '../../shared/ui';
+import { AccountPassword } from '../../shared/AccountPassword';
 type ProfileData = {
   name: string;
   phone: string;
@@ -29,6 +30,8 @@ export function Profile() {
             {q.data && <ProfileForm key={q.data.version} profile={q.data} />}
           </QueryState>
         </Panel>
+        <h2>Đổi mật khẩu</h2>
+        <AccountPassword />
       </main>
     </>
   );

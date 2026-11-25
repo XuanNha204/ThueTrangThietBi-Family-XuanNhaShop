@@ -26,12 +26,21 @@ class SmtpGmailCodeSender implements GmailCodeSender {
 
     @Override
     public void send(String recipient, String code) {
+        send(recipient, "Mã xác minh XuanNhaShop", "Mã xác minh của bạn là " + code);
+    }
+
+    @Override
+    public void sendRecovery(String recipient, String code) {
+        send(recipient, "Mã đặt lại mật khẩu XuanNhaShop", "Mã đặt lại mật khẩu XuanNhaShop của bạn là " + code);
+    }
+
+    private void send(String recipient, String subject, String opening) {
         MimeMessagePreparator prepare = message -> {
             var helper = new org.springframework.mail.javamail.MimeMessageHelper(message, "UTF-8");
             helper.setFrom(sender, "XuanNhaShop");
             helper.setTo(recipient);
-            helper.setSubject("Mã xác minh XuanNhaShop");
-            helper.setText("Mã xác minh của bạn là " + code + ". Mã có hiệu lực trong 5 phút và chỉ dùng một lần.\n"
+            helper.setSubject(subject);
+            helper.setText(opening + ". Mã có hiệu lực trong 5 phút và chỉ dùng một lần.\n"
                 + "Nếu bạn không yêu cầu mã, hãy bỏ qua email này.");
         };
         try {

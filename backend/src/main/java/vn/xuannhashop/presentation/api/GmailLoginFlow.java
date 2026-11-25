@@ -40,33 +40,36 @@ class GmailLoginFlow {
     record Enrollment(@NotBlank @Size(max = 160) String email) {}
     record Contact(String passwordHash, String name, String phone, String address) {}
     private record Pending(UUID id, Action action, UUID account, String gmail, Contact contact,
-                           IdentityApplication.GoogleProfile google, Instant deadline, Instant issuedAt) {}
+                           IdentityApplication.GoogleProfile google, Instant deadline, Instant issuedAt, Long credentialVersion) {}
 
     Status login(IdentityApplication.LoginIdentity account, String identifier,
                  HttpServletRequest req, HttpServletResponse res) {
         var recognized = account.account();
         Instant deadline = Instant.now().plusSeconds(900);
         if (account.gmail() == null) {
-            return begin(new Pending(UUID.randomUUID(), Action.ENROLL, recognized.id(), null, null, null, deadline, null), req, res);
+            return begin(new Pending(UUID.randomUUID(), Action.ENROLL, recognized.id(), null, null, null, deadline, null,
+                account.credentialVersion()), req, res);
         }
         if (!account.gmail().equals(identifier)) {
             throw DomainException.bad("Hãy dùng Gmail đã xác minh để đăng nhập.");
         }
-        return begin(new Pending(UUID.randomUUID(), Action.LOGIN, recognized.id(), account.gmail(), null, null, deadline, null), req, res);
+        return begin(new Pending(UUID.randomUUID(), Action.LOGIN, recognized.id(), account.gmail(), null, null, deadline, null,
+            account.credentialVersion()), req, res);
     }
 
     Status registration(String email, Contact contact, HttpServletRequest req, HttpServletResponse res) {
         String gmail = GmailAddress.required(email);
         identity.ensureGmailAvailable(gmail);
         return begin(new Pending(UUID.randomUUID(), Action.REGISTER, null, gmail, contact, null,
-            Instant.now().plusSeconds(900), null), req, res);
+            Instant.now().plusSeconds(900), null, null), req, res);
     }
 
     Status google(IdentityApplication.GoogleProfile profile, UserAccount account, Contact contact,
                   HttpServletRequest req, HttpServletResponse res) {
         String gmail = GmailAddress.required(profile.email());
+        Long version = account == null ? null : identity.customerCredentialVersion(account.id());
         return begin(new Pending(UUID.randomUUID(), Action.GOOGLE, account == null ? null : account.id(), gmail,
-            contact, profile, Instant.now().plusSeconds(900), null), req, res);
+            contact, profile, Instant.now().plusSeconds(900), null, version), req, res);
     }
 
     @GetMapping("/state")
@@ -85,7 +88,7 @@ class GmailLoginFlow {
         String email = GmailAddress.required(input.email());
         identity.ensureGmailAvailable(email);
         return store(issue(new Pending(UUID.randomUUID(), pending.action(), pending.account(), email, null, null,
-            pending.deadline(), null)), req);
+            pending.deadline(), null, pending.credentialVersion())), req);
     }
 
     @PostMapping("/resend")
@@ -99,6 +102,11 @@ class GmailLoginFlow {
     UserAccount verify(@RequestBody @Valid Verification input, HttpServletRequest req, HttpServletResponse res) {
         Pending pending = required(req);
         if (pending.issuedAt() == null) throw DomainException.bad("Hãy yêu cầu gửi mã trước.");
+        Long version = pending.credentialVersion();
+        if (version != null && version != identity.customerCredentialVersion(pending.account())) {
+            cancel(req);
+            throw DomainException.bad("Mật khẩu đã thay đổi. Hãy đăng nhập lại.");
+        }
         codes.verify(pending.id(), input.code());
         cancel(req);
         UserAccount account = switch (pending.action()) {
@@ -114,7 +122,8 @@ class GmailLoginFlow {
                 yield identity.verifyGoogleGmail(pending.google(), pending.account(), details);
             }
         };
-        sessions.start(account, req, res);
+        if (version == null) sessions.start(account, req, res);
+        else sessions.start(account, version, req, res);
         return account;
     }
 
@@ -135,7 +144,7 @@ class GmailLoginFlow {
         if (status(pending).resendAfter() > 0) throw new DomainException(429, "Chưa đến thời điểm gửi lại mã.");
         codes.send(pending.id(), pending.gmail());
         return new Pending(pending.id(), pending.action(), pending.account(), pending.gmail(), pending.contact(),
-            pending.google(), pending.deadline(), Instant.now());
+            pending.google(), pending.deadline(), Instant.now(), pending.credentialVersion());
     }
 
     private Status store(Pending pending, HttpServletRequest req) {

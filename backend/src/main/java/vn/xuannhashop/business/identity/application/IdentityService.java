@@ -77,6 +77,11 @@ public class IdentityService implements IdentityApplication {
         return current.account();
     }
 
+    @Override
+    public long customerCredentialVersion(UUID accountId) {
+        return activeCustomer(accountId).credentialVersion();
+    }
+
     private LoginIdentity activeCustomer(UUID accountId) {
         var current = repository.loginIdentity(accountId);
         if (current == null || !current.account().enabled() || !"CUSTOMER".equals(current.account().role())

@@ -27,6 +27,7 @@ import { Imports } from './features/staff/Imports';
 import { Audit, Notifications, Reports, Settings } from './features/staff/SystemPages';
 import { useApp } from './shared/state';
 import { Loading, PageHeader, Panel } from './shared/ui';
+import { AccountPassword } from './shared/AccountPassword';
 function Guard({ staff = false, roles }: { staff?: boolean; roles?: string[] }) {
   const { user, authLoading } = useApp(),
     location = useLocation();
@@ -105,6 +106,15 @@ export function App() {
       <Route element={<Guard staff />}>
         <Route path="/app" element={<StaffShell />}>
           <Route index element={<Dashboard />} />
+          <Route
+            path="password"
+            element={
+              <>
+                <PageHeader title="Đổi mật khẩu" />
+                <AccountPassword />
+              </>
+            }
+          />
           <Route
             path="attention"
             element={

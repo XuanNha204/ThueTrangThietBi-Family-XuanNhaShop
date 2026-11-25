@@ -32,19 +32,45 @@ public class GmailChallengeService {
 
     public void send(UUID challenge, String recipient) {
         String email = GmailAddress.required(recipient);
-        if (!repository.reserveSend(HexFormat.of().formatHex(mac("inbox:" + email)))) {
+        String code = reserveCode("inbox:", email);
+        mail.send(email, code);
+        activate(challenge, "code:", code);
+    }
+
+    public void sendRecovery(UUID challenge, String gmail, AccountPasswordService.RecoveryTarget target) {
+        String code = reserveCode("recovery-inbox:", gmail);
+        activate(challenge, recoveryScope(target), code);
+        if (target != null) mail.sendRecovery(gmail, code);
+    }
+
+    private String reserveCode(String bucket, String email) {
+        if (!repository.reserveSend(HexFormat.of().formatHex(mac(bucket + email)))) {
             throw new DomainException(429, "Vui lòng đợi trước khi gửi lại mã. Mỗi Gmail nhận tối đa 5 mã trong 15 phút.");
         }
-        String code = String.format(Locale.ROOT, "%06d", random.nextInt(1_000_000));
-        mail.send(email, code);
-        if (!repository.activate(challenge, mac("code:" + challenge + ":" + code))) {
+        return String.format(Locale.ROOT, "%06d", random.nextInt(1_000_000));
+    }
+
+    private void activate(UUID challenge, String scope, String code) {
+        if (!repository.activate(challenge, mac(scope + challenge + ":" + code))) {
             throw DomainException.conflict("Phiên đã được xác minh. Hãy đăng nhập lại nếu cần.");
         }
     }
 
     public void verify(UUID challenge, String code) {
+        verify(challenge, "code:", code);
+    }
+
+    public void verifyRecovery(UUID challenge, AccountPasswordService.RecoveryTarget target, String code) {
+        verify(challenge, recoveryScope(target), code);
+    }
+
+    private String recoveryScope(AccountPasswordService.RecoveryTarget target) {
+        return "password-recovery:" + (target == null ? "unavailable" : target.challengeScope()) + ":";
+    }
+
+    private void verify(UUID challenge, String scope, String code) {
         if (code == null || !code.matches("[0-9]{6}")) throw DomainException.bad("Nhập mã gồm đúng 6 chữ số.");
-        var result = repository.check(challenge, mac("code:" + challenge + ":" + code));
+        var result = repository.check(challenge, mac(scope + challenge + ":" + code));
         if (result == null) throw DomainException.bad("Mã đã hết hạn hoặc hết lượt thử. Hãy gửi lại mã.");
         if (!result.accepted()) {
             if (result.remaining() == 0) throw DomainException.bad("Bạn đã dùng hết 5 lượt thử. Hãy gửi lại mã.");

@@ -17,4 +17,14 @@ public class JobPools {
         executor.setAwaitTerminationSeconds(15);
         return executor;
     }
+
+    @Bean(name = "recoveryMailWorker")
+    ThreadPoolTaskExecutor recoveryMailWorker() {
+        var executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(12);
+        executor.setThreadNamePrefix("recovery-mail-");
+        return executor;
+    }
 }

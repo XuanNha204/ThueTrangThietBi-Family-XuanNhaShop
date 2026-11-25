@@ -10,6 +10,7 @@ import {
   FileInput,
   Headphones,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
   Menu,
   Search,
@@ -147,6 +148,12 @@ export const staffNavigation = [
   },
   { path: '/app/audit', label: 'Lịch sử thao tác', icon: ShieldCheck, roles: ['OWNER'] },
   { path: '/app/settings', label: 'Tài khoản & chính sách', icon: Settings2, roles: ['OWNER'] },
+  {
+    path: '/app/password',
+    label: 'Đổi mật khẩu',
+    icon: LockKeyhole,
+    roles: ['OWNER', 'MANAGER', 'ACCOUNTANT', 'INVENTORY', 'DELIVERY', 'TECHNICIAN', 'HR'],
+  },
 ];
 const items = staffNavigation;
 export function StaffShell() {

@@ -34,6 +34,7 @@ public class AuthController {
         if (gmail!=null && identifier.contains("@")) identifier=GmailAddress.required(identifier);
         var auth=manager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(identifier,input.password()));
         var recognized=identity.loginIdentity(auth.getName());
+        if (sessions.passwordVersion(auth)!=recognized.credentialVersion()) throw new BadCredentialsException("Thông tin xác thực đã thay đổi.");
         if ("CUSTOMER".equals(recognized.account().role())) {
             if (gmail!=null) return gmail.login(recognized,identifier,req,res);
             if (recognized.gmail()!=null) throw new DomainException(503,"Xác minh Gmail chưa sẵn sàng. Vui lòng thử lại sau.");

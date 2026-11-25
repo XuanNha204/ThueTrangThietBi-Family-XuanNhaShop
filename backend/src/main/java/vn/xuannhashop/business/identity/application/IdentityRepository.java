@@ -2,9 +2,10 @@ package vn.xuannhashop.business.identity.application;
 import java.util.*;
 import vn.xuannhashop.business.identity.domain.*;
 public interface IdentityRepository {
-    record Credentials(UserAccount account,String passwordHash) {}
+    record Credentials(UserAccount account,String passwordHash,long credentialVersion) {}
     Credentials find(String username);
     Credentials findByLoginGmail(String gmail);
+    boolean updatePassword(UUID account, long version, String hash);
     IdentityApplication.LoginIdentity loginIdentity(String username);
     IdentityApplication.LoginIdentity loginIdentity(UUID accountId);
     void lockGmail(String gmail);

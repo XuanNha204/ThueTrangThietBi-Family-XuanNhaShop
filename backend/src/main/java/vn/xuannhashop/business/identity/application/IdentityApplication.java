@@ -5,12 +5,13 @@ public interface IdentityApplication {
     UserAccount me(); List<Customer> customers(); List<UserAccount> accounts();
     Customer customer(UUID id); UUID createCustomer(String name,String phone,String address);
     UUID register(String username,String passwordHash,String name,String phone,String address);
-    record LoginIdentity(UserAccount account, String gmail) {}
+    record LoginIdentity(UserAccount account, String gmail, long credentialVersion) {}
     LoginIdentity loginIdentity(String username);
     void ensureGmailAvailable(String gmail);
     UserAccount registerGmail(String gmail, String passwordHash, String name, String phone, String address);
     UserAccount enrollGmail(UUID accountId, String gmail);
     UserAccount gmailLogin(UUID accountId, String gmail);
+    long customerCredentialVersion(UUID accountId);
     record GoogleProfile(String subject, String email, String name) {}
     UserAccount googleAccount(String subject);
     UserAccount registerGoogle(GoogleProfile profile, String name, String phone, String address);
