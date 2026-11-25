@@ -20,6 +20,35 @@ public class IdentityService implements IdentityApplication {
         var c=validated(name,phone,address);repository.addCustomer(c);var id=UUID.randomUUID();
         repository.addAccount(new UserAccount(id,username,c.name(),"CUSTOMER",c.id(),true),passwordHash);return id;
     }
+    @Override
+    public UserAccount googleAccount(String subject) {
+        UserAccount account = repository.findByGoogleSubject(Checks.text(subject, 255, "Danh tính Google"));
+        if (account != null && (!account.enabled() || !"CUSTOMER".equals(account.role()) || account.customerId() == null)) {
+            throw new DomainException(403, "Tài khoản khách thuê không thể đăng nhập.");
+        }
+        return account;
+    }
+
+    @Override
+    @Transactional
+    public UserAccount registerGoogle(GoogleProfile profile, String name, String phone, String address) {
+        String subject = Checks.text(profile.subject(), 255, "Danh tính Google");
+        String email = validatedEmail(Checks.text(profile.email(), 160, "Email Google"));
+        Customer details = validated(name, phone, address);
+        repository.lockGoogleSubject(subject);
+        UserAccount existing = googleAccount(subject);
+        if (existing != null) return existing;
+
+        Customer customer = new Customer(details.id(), details.name(), details.phone(), email, details.address());
+        UUID accountId = UUID.randomUUID();
+        String username = "google-" + accountId;
+        var account = new UserAccount(accountId, username, customer.name(), "CUSTOMER", customer.id(), true);
+        repository.addCustomer(customer);
+        repository.addAccount(account, null);
+        repository.bindGoogleSubject(subject, accountId);
+        audit.system("GOOGLE_CUSTOMER_REGISTERED", accountId, "Tạo tài khoản khách từ đăng nhập Google.");
+        return account;
+    }
     private Customer validated(String name,String phone,String address){
         Checks.text(phone,20,"Điện thoại");if(!phone.matches("\\+?[0-9]{8,15}"))throw DomainException.bad("Số điện thoại gồm 8–15 chữ số.");
         return new Customer(UUID.randomUUID(),Checks.text(name,120,"Họ tên"),phone,null,Checks.text(address,400,"Địa chỉ"));
@@ -29,11 +58,18 @@ public class IdentityService implements IdentityApplication {
     public Profile profile(){actor.require("CUSTOMER");var p=repository.profile(actor.current().customerId());if(p==null)throw DomainException.missing();return p;}
     @Transactional public void updateProfile(Profile input){
         actor.require("CUSTOMER");if(input==null)throw DomainException.bad("Thông tin liên hệ không hợp lệ.");
-        var c=validated(input.name(),input.phone(),input.address());String email=input.email()==null?null:input.email().strip();
-        if(email!=null&&email.isEmpty())email=null;
-        if(email!=null&&(email.length()>160||!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")))throw DomainException.bad("Email không hợp lệ.");
+        var c=validated(input.name(),input.phone(),input.address());String email=validatedEmail(input.email());
         UUID id=actor.current().customerId();
         if(!repository.updateProfile(id,new Profile(c.name(),c.phone(),email,c.address(),input.version())))throw DomainException.conflict("Thông tin đã được cập nhật ở phiên khác. Hãy tải lại trước khi lưu.");
         audit.record("CUSTOMER_CONTACT_UPDATED",id,"Cập nhật liên hệ của chính mình; giữ nguyên địa chỉ trong các đơn đã lập.");
+    }
+
+    private String validatedEmail(String value) {
+        String email = value == null ? null : value.strip();
+        if (email == null || email.isEmpty()) return null;
+        if (email.length() > 160 || !email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {
+            throw DomainException.bad("Email không hợp lệ.");
+        }
+        return email;
     }
 }

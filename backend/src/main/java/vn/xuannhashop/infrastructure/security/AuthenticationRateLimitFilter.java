@@ -19,7 +19,7 @@ public class AuthenticationRateLimitFilter extends OncePerRequestFilter {
     }
     protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain)throws ServletException,IOException{
         String path=req.getRequestURI().substring(req.getContextPath().length());
-        if(!req.getMethod().equals("POST")||!(path.equals("/api/auth/login")||path.equals("/api/auth/register"))){chain.doFilter(req,res);return;}
+        if(!req.getMethod().equals("POST")||!(path.equals("/api/auth/login")||path.equals("/api/auth/register")||path.equals("/api/auth/google/complete"))){chain.doFilter(req,res);return;}
         if(req.getContentLengthLong()>16384){res.sendError(413);return;}
         try{
             String ip=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(req.getRemoteAddr().getBytes(StandardCharsets.UTF_8)));

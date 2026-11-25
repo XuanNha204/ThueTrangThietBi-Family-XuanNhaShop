@@ -10,6 +10,21 @@ public class JdbcIdentityRepository implements IdentityRepository {
     private UserAccount account(Map<String,Object> r){return new UserAccount((UUID)r.get("id"),(String)r.get("username"),(String)r.get("display_name"),(String)r.get("role"),(UUID)r.get("customer_id"),(Boolean)r.get("enabled"));}
     private Customer person(Map<String,Object> r){return new Customer((UUID)r.get("id"),(String)r.get("name"),(String)r.get("phone"),(String)r.get("email"),(String)r.get("address"));}
     public Credentials find(String username){var r=s.one("select * from user_account where username=:u",p("u",username));return r==null?null:new Credentials(account(r),(String)r.get("password_hash"));}
+    public UserAccount findByGoogleSubject(String subject) {
+        var row = s.one("""
+            select u.* from google_customer_identity g
+            join user_account u on u.id = g.account_id
+            where g.subject = :subject
+            """, p("subject", subject));
+        return row == null ? null : account(row);
+    }
+    public void lockGoogleSubject(String subject) {
+        s.rows("select pg_advisory_xact_lock(hashtextextended(:key, 0))", p("key", "google-identity:" + subject));
+    }
+    public void bindGoogleSubject(String subject, UUID account) {
+        s.update("insert into google_customer_identity (subject, account_id) values (:subject, :account)",
+            p("subject", subject, "account", account));
+    }
     public List<Customer> customers(){return s.rows("select * from customer order by created_at desc limit 300",Map.of()).stream().map(this::person).toList();}
     public Customer customer(UUID id){var r=s.one("select * from customer where id=:id",p("id",id));return r==null?null:person(r);}
     public void addCustomer(Customer c){s.update("insert into customer(id,name,phone,email,address) values(:id,:name,:phone,:email,:address)",p("id",c.id(),"name",c.name(),"phone",c.phone(),"email",c.email(),"address",c.address()));}

@@ -10,10 +10,18 @@ import { useApp } from '../../shared/state';
 import type { User } from '../../shared/types';
 import { staffNavigation } from '../staff/Shell';
 import { passwordHint, passwordPattern } from '../../shared/password';
+import { GoogleLoginContinuation, GoogleSignIn } from './GoogleLogin';
 export function Login() {
   const { setUser } = useApp();
   const navigate = useNavigate(),
     location = useLocation();
+  const google = new URLSearchParams(location.search).get('google');
+  const googleError =
+    google === 'blocked'
+      ? 'Tài khoản khách thuê đang bị khóa. Hãy liên hệ cửa hàng để được hỗ trợ.'
+      : google === 'failed'
+        ? 'Đăng nhập Google chưa hoàn tất. Bạn có thể thử lại.'
+        : '';
   const [mode, setMode] = useState<'login' | 'register'>('login'),
     [username, setUsername] = useState(''),
     [password, setPassword] = useState(''),
@@ -92,128 +100,145 @@ export function Login() {
         </Link>
         <div className="login-form">
           <div className="eyebrow">XuanNhaShop</div>
-          <h1>{mode === 'login' ? 'Chào bạn,' : 'Tạo tài khoản thuê'}</h1>
-          <p>
-            {mode === 'login'
-              ? 'Đăng nhập để tiếp tục cùng XuanNha.'
-              : 'Lưu thông tin và theo dõi đơn thuê của bạn.'}
-          </p>
-          <form className="form-stack" onSubmit={submit}>
-            {mode === 'register' && (
-              <>
+          {google === 'setup' || google === 'success' ? (
+            <GoogleLoginContinuation key={google} phase={google} />
+          ) : (
+            <>
+              <h1>{mode === 'login' ? 'Chào bạn,' : 'Tạo tài khoản thuê'}</h1>
+              <p>
+                {mode === 'login'
+                  ? 'Đăng nhập để tiếp tục cùng XuanNha.'
+                  : 'Lưu thông tin và theo dõi đơn thuê của bạn.'}
+              </p>
+              <form className="form-stack" onSubmit={submit}>
+                {googleError && !error && (
+                  <div role="alert" className="inline-error">
+                    {googleError}
+                  </div>
+                )}
+                {mode === 'register' && (
+                  <>
+                    <label className="field">
+                      <span>Họ và tên</span>
+                      <input name="name" autoComplete="name" required maxLength={120} />
+                    </label>
+                    <label className="field">
+                      <span>Số điện thoại</span>
+                      <input
+                        name="phone"
+                        type="tel"
+                        autoComplete="tel"
+                        required
+                        pattern="\+?[0-9]{8,15}"
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Địa chỉ</span>
+                      <input
+                        name="address"
+                        autoComplete="street-address"
+                        required
+                        maxLength={400}
+                      />
+                    </label>
+                  </>
+                )}
                 <label className="field">
-                  <span>Họ và tên</span>
-                  <input name="name" autoComplete="name" required maxLength={120} />
-                </label>
-                <label className="field">
-                  <span>Số điện thoại</span>
+                  <span>Tên đăng nhập</span>
                   <input
-                    name="phone"
-                    type="tel"
-                    autoComplete="tel"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
                     required
-                    pattern="\+?[0-9]{8,15}"
+                    maxLength={60}
                   />
                 </label>
                 <label className="field">
-                  <span>Địa chỉ</span>
-                  <input name="address" autoComplete="street-address" required maxLength={400} />
+                  <span>Mật khẩu</span>
+                  <div className="password-input">
+                    <input
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type={show ? 'text' : 'password'}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      required
+                      minLength={mode === 'register' ? 8 : 1}
+                      pattern={mode === 'register' ? passwordPattern : undefined}
+                      title={mode === 'register' ? passwordHint : undefined}
+                      maxLength={72}
+                    />
+                    <button
+                      type="button"
+                      aria-label={show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShow((v) => !v)}
+                    >
+                      {show ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {mode === 'register' && (
+                    <small>
+                      {passwordHint} Tên đăng nhập dùng chữ thường, số, dấu chấm, gạch dưới hoặc
+                      gạch ngang.
+                    </small>
+                  )}
                 </label>
-              </>
-            )}
-            <label className="field">
-              <span>Tên đăng nhập</span>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                required
-                maxLength={60}
-              />
-            </label>
-            <label className="field">
-              <span>Mật khẩu</span>
-              <div className="password-input">
-                <input
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  type={show ? 'text' : 'password'}
-                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  required
-                  minLength={mode === 'register' ? 8 : 1}
-                  pattern={mode === 'register' ? passwordPattern : undefined}
-                  title={mode === 'register' ? passwordHint : undefined}
-                  maxLength={72}
-                />
+                {error && (
+                  <div role="alert" className="inline-error">
+                    {error}
+                  </div>
+                )}
+                <Button type="submit" busy={busy}>
+                  {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản & đăng nhập'}
+                  <ArrowRight size={17} />
+                </Button>
+              </form>
+              <GoogleSignIn from={(location.state as { from?: string } | null)?.from} busy={busy} />
+              <div className="login-switch">
+                {mode === 'login' ? 'Bạn chưa có tài khoản?' : 'Bạn đã có tài khoản?'}{' '}
                 <button
-                  type="button"
-                  aria-label={show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                  onClick={() => setShow((v) => !v)}
+                  onClick={() => {
+                    setMode(mode === 'login' ? 'register' : 'login');
+                    setError('');
+                  }}
                 >
-                  {show ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {mode === 'login' ? 'Đăng ký' : 'Đăng nhập'}
                 </button>
               </div>
-              {mode === 'register' && (
-                <small>
-                  {passwordHint} Tên đăng nhập dùng chữ thường, số, dấu chấm, gạch dưới hoặc
-                  gạch ngang.
-                </small>
+              {import.meta.env.DEV && mode === 'login' && (
+                <details className="demo-accounts">
+                  <summary>Tài khoản dùng thử tại máy này</summary>
+                  <p>Dữ liệu minh họa, không phải giao dịch thực tế.</p>
+                  <select
+                    aria-label="Chọn tài khoản dùng thử"
+                    defaultValue=""
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      setPassword('XuanNhaDev!2026');
+                    }}
+                  >
+                    <option value="" disabled>
+                      Chọn vai trò
+                    </option>
+                    {[
+                      ['owner', 'OWNER'],
+                      ['accountant', 'ACCOUNTANT'],
+                      ['stock', 'INVENTORY'],
+                      ['delivery', 'DELIVERY'],
+                      ['technician', 'TECHNICIAN'],
+                      ['hr', 'HR'],
+                      ['customer', 'CUSTOMER'],
+                    ].map(([u, r]) => (
+                      <option key={u} value={u}>
+                        {roles[r]} · {u}
+                      </option>
+                    ))}
+                  </select>
+                  <p>
+                    Mật khẩu mẫu: <code>XuanNhaDev!2026</code>
+                  </p>
+                </details>
               )}
-            </label>
-            {error && (
-              <div role="alert" className="inline-error">
-                {error}
-              </div>
-            )}
-            <Button type="submit" busy={busy}>
-              {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản & đăng nhập'}
-              <ArrowRight size={17} />
-            </Button>
-          </form>
-          <div className="login-switch">
-            {mode === 'login' ? 'Bạn chưa có tài khoản?' : 'Bạn đã có tài khoản?'}{' '}
-            <button
-              onClick={() => {
-                setMode(mode === 'login' ? 'register' : 'login');
-                setError('');
-              }}
-            >
-              {mode === 'login' ? 'Đăng ký' : 'Đăng nhập'}
-            </button>
-          </div>
-          {import.meta.env.DEV && mode === 'login' && (
-            <details className="demo-accounts">
-              <summary>Tài khoản dùng thử tại máy này</summary>
-              <p>Dữ liệu minh họa, không phải giao dịch thực tế.</p>
-              <select
-                aria-label="Chọn tài khoản dùng thử"
-                defaultValue=""
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  setPassword('XuanNhaDev!2026');
-                }}
-              >
-                <option value="" disabled>
-                  Chọn vai trò
-                </option>
-                {[
-                  ['owner', 'OWNER'],
-                  ['accountant', 'ACCOUNTANT'],
-                  ['stock', 'INVENTORY'],
-                  ['delivery', 'DELIVERY'],
-                  ['technician', 'TECHNICIAN'],
-                  ['hr', 'HR'],
-                  ['customer', 'CUSTOMER'],
-                ].map(([u, r]) => (
-                  <option key={u} value={u}>
-                    {roles[r]} · {u}
-                  </option>
-                ))}
-              </select>
-              <p>
-                Mật khẩu mẫu: <code>XuanNhaDev!2026</code>
-              </p>
-            </details>
+            </>
           )}
           <div className="login-security">
             <ShieldCheck size={15} />

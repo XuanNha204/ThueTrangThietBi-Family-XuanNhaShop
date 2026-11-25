@@ -1,0 +1,16 @@
+# Optional production overlay, used with compose.yml and the active proxy overlay.
+services:
+  backend:
+    environment:
+      GOOGLE_OAUTH_ENABLED: "true"
+      GOOGLE_OAUTH_REDIRECT_URI: https://${DOMAIN:?Set DOMAIN}/api/auth/google/callback
+    secrets:
+      - source: google_oauth_client_id
+        target: app.google.client-id
+      - source: google_oauth_client_secret
+        target: app.google.client-secret
+secrets:
+  google_oauth_client_id:
+    file: ./secrets/google_oauth_client_id
+  google_oauth_client_secret:
+    file: ./secrets/google_oauth_client_secret

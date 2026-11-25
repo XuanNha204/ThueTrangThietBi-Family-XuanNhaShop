@@ -4,6 +4,9 @@ import vn.xuannhashop.business.identity.domain.*;
 public interface IdentityRepository {
     record Credentials(UserAccount account,String passwordHash) {}
     Credentials find(String username);
+    UserAccount findByGoogleSubject(String subject);
+    void lockGoogleSubject(String subject);
+    void bindGoogleSubject(String subject, UUID account);
     List<Customer> customers();
     Customer customer(UUID id);
     void addCustomer(Customer c);

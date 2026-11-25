@@ -54,6 +54,11 @@ logging:
     root: INFO
     org.springframework: INFO
 app:
+  google:
+    enabled: ${GOOGLE_OAUTH_ENABLED:false}
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+    client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
+    redirect-uri: ${GOOGLE_OAUTH_REDIRECT_URI:}
   private-files: ${PRIVATE_FILES:../.dev/private-files}
   notifications: ${NOTIFICATION_FILE:../.dev/notifications.ndjson}
   dev-password: ${DEV_PASSWORD:unused-unless-dev-seed-enabled}
